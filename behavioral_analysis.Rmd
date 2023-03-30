@@ -1,0 +1,507 @@
+---
+title: "Behavioral Error Analysis"
+date: "2022-12-01"
+output: 
+  html_document:
+    code_folding: hide
+    theme: yeti
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyr)
+library(readxl)
+library(ggplot2)
+library(PairedData)
+
+library(lme4)      # Mixed models
+library(lmerTest)  # Summary and p-values for mixed models
+library(sjPlot)   # APA-style tables for mixed models
+library(broom.mixed)
+library(kableExtra)
+library(ggsci)
+```
+
+# Abstract 
+
+This study investigates how individuals learn from errors. Behavioral data collected in an error-generation memory task was compared to mathematical predictions from computational cognitive models reflecting alternative mechanisms of error learning. From this combined methods approach, we found that differences in reaction times support a mediator explanation of error learning in which individuals use a previous error as a secondary cue to retrieve an answer.
+
+# Methods
+
+## Participants 
+
+69 healthy students were recruited through the UW psychology subject pool. All participants were given course credit for their participation. After removing four participants for incomplete task completion and four for lack of English proficiency, a total of 61 participants were retained for analysis.
+
+## Data 
+
+To determine error learning through accuracies and reaction times, participants
+completed a 30 minute memory task administered online using the PsyToolKit software. Participants memorized 60 different weakly-associated word pairs in either a study or error-generation condition. In the study condition, participants saw both the cue and target word simultaneously on the screen. In the error condition, participants saw only the cue word on the screen with a text box below where they were prompted to type in what they thought the target word was. After answering, participants were given corrective feedback by viewing both the cue and target word together. After learning all 60 word pairs, participants played a visuospatial game for 5 minutes to prevent rehearsal. After this distraction phase, participants took a self-paced final test consisting of all 60 word pairs.
+
+```{r}
+# Load data:
+errors <- read_excel("behavioral_data/error_data.xlsx")
+
+```
+
+```{r}
+# Remove error items that were correctly guessed during the learning phase
+study_items <- errors %>% 
+  subset(condition == 2)
+
+guess <- errors %>% 
+  subset(phase == "learn" & condition == 1 & correct!=1) %>% 
+  dplyr::select(participant, cue)
+
+clean_errors <- left_join(guess, errors, by = c("participant", "cue")) %>% 
+  filter(phase == "test") %>% 
+  full_join(study_items, by = c("participant", "cue", "phase", "condition", "target", "response", "rt", "correct", "Column1", "Column2"))
+
+```
+
+```{r}
+# Calculate individual accuracy and average reaction time
+indiv_summary <- clean_errors %>% 
+  filter(correct == 1) %>% 
+  group_by(participant, condition) %>%
+  summarize(
+    performance = n()/30,
+    avgRT = mean(rt)
+  ) %>% 
+  mutate(condition = replace(condition, condition == 1, "error")) %>% 
+  mutate(condition = replace(condition, condition == 2, "study")) 
+
+group_summary <- indiv_summary %>% 
+  group_by(condition) %>% 
+  summarize(
+    meanPerformance = mean(performance),
+    stdPerformance = sd(performance),
+    meanRT = mean(avgRT),
+    stdRT = sd(avgRT)
+  ) %>% 
+  mutate(condition = replace(condition, condition == 1, "error")) %>% 
+  mutate(condition = replace(condition, condition == 2, "study")) 
+
+```
+
+# Summary Visuals
+```{r message=FALSE}
+# Individual participant performance by condition with slope detail
+calc_sign <- function(numbers) {
+  slope = c()
+  for (i in 1:length(numbers)) {
+    if (numbers[i] < 0) {
+    slope[i] = "negative"
+  } else if (numbers[i] > 0) {
+    slope[i] = "positive"
+  } else {
+        slope[i] = "zero"
+      }
+  }
+  return(slope)
+}
+
+slope_data <- indiv_summary %>% 
+  group_by(participant) %>% 
+  mutate(difference = diff(performance)) %>% 
+  mutate(slope = calc_sign(difference)) 
+
+ggplot(data = slope_data) +
+  geom_point(mapping = aes(x = condition, y = performance, color = slope)) +
+  geom_line(mapping = aes(x = condition, y = performance, group = participant, color = slope)) +
+  labs(
+    title = "Performance Compared by Condition",
+    x = "Condition",
+    y = "Performance"
+  )
+
+# kernel density plot
+clean_study <- indiv_summary %>% 
+  filter(condition == "study") %>% 
+  dplyr::select(performance)
+study <- clean_study$performance
+
+clean_error <- indiv_summary %>% 
+  filter(condition == "error") %>% 
+  dplyr::select(performance)
+error <- clean_error$performance
+
+study_dens <- density(study)
+error_dens <- density(error)
+
+plot(study_dens, col='blue', ylim=c(0,3), main="Density Plot of Performance", xlab="Accuracy")
+lines(error_dens, col='red')
+legend(0.1, 2.5, legend=c("Study", "Error"), col=c("blue", "red"), lty=1, cex=0.8)
+
+```
+
+# Mixed Linear Models Analysis
+
+Let's analyze the data using mixed linear models. First, let's look at the distribution of response times to find if there are any obvious outliers:
+
+```{r}
+ggplot(clean_errors, aes(x=rt)) +
+  geom_histogram(bins=70, color="white") +
+  xlab("Response Times (ms)") +
+  ggtitle("Distributuion of Response Times") +
+  ylab("Number") +
+  geom_vline(aes(xintercept=15000),
+             color="red", linetype="dashed") + 
+  annotate("text", x = 15000, y = 1000, label = "Cutoff", hjust=-0.25, color="red") +
+  theme_minimal()
+```
+
+There are clearly some trials, from a few participants, that take a huge amount of time, up to 96 seconds. We do not want our data contaminated by trials in which participants looked at their phones, so we are going to use a cutoff of 15000 ms. We are also going to remove extremely fast trial, i.e. trials whose RT is greater than 200 ms.
+
+```{r}
+cleandata <- clean_errors %>% filter(rt > 200, rt < 15000)
+```
+
+Finally, we are going to rename the conditions to make sure we are using meaningful labels, and make sure that correct is between 0 and 1.
+
+```{r}
+cleandata <- cleandata %>% 
+  mutate(condition = replace(condition, condition == 1, "error")) %>% 
+  mutate(condition = replace(condition, condition == 2, "study")) %>%
+  mutate(correct = replace(correct, correct == 2, 0))
+```
+
+
+## Mixed Linear Model for Accuracy
+
+Mixed Linear Models are great because they naturally account for variability and individual differences. We are going to first analyze accuracies, which are encoded in the `correct` column of the `cleandata` dataframe.
+
+In our mixed linear models, we are going to model responses are arising from a combination of factors. First, we are going to model a fixed effect of _condition_, i.e., whether the particular response was given to an item in the _Error_ or _Study_ condition. Then, we are going to add a participant-level random _intercept_, which accounts for the fact that different participants have different baseline accuracies. And, finally, we are going to make sure that the model uses a binomial distribution, because accuracy data is binary (correct or not).
+
+```{r}
+acc_model <- glmer(correct ~ condition # Fixed effect of condition
+                   + (1|participant),  # Interface for participant
+                   family=binomial, 
+                   cleandata)
+```
+
+
+### Comparing the model to other models
+
+We can ask ourselves whether this model is a good model -- for example, does it have the right amount of complexity? To answer this question, we can compare it to a _simpler_ model, whichn does not have any random effects, and to a _more complex_ model, which also includes a random slope per participant.
+
+
+```{r}
+acc_model_simple <- glm(correct ~ condition, # Fixed effect of condition
+                        family=binomial, 
+                        cleandata)
+
+acc_model_complex <- glmer(correct ~ condition # Fixed effect of condition
+                           + (1|participant)  # Interface for participant
+                           + (0 + condition|participant),
+                           family=binomial, 
+                           cleandata)
+
+```
+
+We can see that our model is better than the simpler model:
+
+```{r}
+anova(acc_model, acc_model_simple) %>% 
+  tidy() %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("hover", "striped"))
+```
+
+while the complex model does not gain much in terms of fit.
+
+
+```{r}
+anova(acc_model, acc_model_complex) %>% 
+  tidy() %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("hover", "striped"))
+```
+
+###  Statistical Results
+
+Having picked the model, we can visualize the results here:
+
+```{r}
+acc_model %>%
+  tidy() %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("hover", "striped"))
+```
+
+And in APA style
+
+```{r}
+tab_model(acc_model)
+```
+
+### Visualizing the data
+
+And here is a quick visualization:
+
+```{r fig.height=5, fig.width=5, message=FALSE, warning=FALSE}
+cleandata_agg <- cleandata %>% group_by(participant, condition) %>%
+  summarise(Accuracy = mean(correct))
+
+cleandata_summary <- cleandata_agg %>% group_by(condition) %>%
+  summarise(Accuracy = mean(Accuracy))
+
+ggplot(cleandata_agg, aes(x=condition, y=Accuracy, color=condition)) +
+  geom_line(color="grey", aes(group=participant), size=0.1) +
+  geom_point(position =   position_jitter(width=0.1), alpha=0.75, color="grey") +
+  scale_color_aaas() +
+
+  ggtitle("Mean Differences in Accuracy") +
+  xlab("Condition") +
+  stat_summary(geom="point", fun.data = "mean_se", size=3) +
+  stat_summary(geom="errorbar", fun.data = "mean_se", width=0.1) +
+  geom_text(data=cleandata_summary, 
+            aes(x=condition, 
+                y=Accuracy, 
+                label=paste(round(Accuracy*100, 2), "%")), 
+            hjust= c(1.2, -0.2)) +
+
+  theme_minimal()
+```
+
+
+### Compare Data to Model Predictions
+
+How is the data compared to the linear model predictions? To do so, we can generate the model predictions and visualize them side by side to the data:
+
+```{r message=FALSE}
+cleandata <- cleandata %>% mutate(pred_correct = fitted(acc_model))
+
+cleandata %>% pivot_longer(cols=c("correct", "pred_correct"),
+                           values_to = "accuracy",
+                           names_to = "type") -> cleandata_long
+
+cleandata_agg_pred <- cleandata_long %>% 
+  mutate(type = replace(type, type == "correct",  "Observed")) %>% 
+  mutate(type = replace(type, type == "pred_correct", "Predicted")) %>%
+  group_by(participant, condition, type) %>%
+  summarise(Accuracy = mean(accuracy))
+
+cleandata_summary_pred <- cleandata_agg_pred %>% 
+  group_by(condition, type) %>%
+  summarise(Accuracy = mean(Accuracy))
+
+ggplot(cleandata_agg_pred, aes(x=condition, y=Accuracy, color=condition)) +
+  facet_wrap(~ type) +
+  geom_line(color="grey", aes(group=participant), size=0.1) +
+  geom_point(position =   position_jitter(width=0.1), alpha=0.75, color="grey") +
+  scale_color_aaas() +
+  geom_text(data=cleandata_summary_pred, 
+            aes(x=condition, 
+                y=Accuracy, 
+                label=paste(round(Accuracy*100, 2), "%")), 
+            hjust= c(-0.2)) +
+  ggtitle("Mean Differences in Accuracy") +
+  xlab("Condition") +
+  stat_summary(geom="point", fun.data = "mean_se", size=3) +
+  stat_summary(geom="errorbar", fun.data = "mean_se", width=0.1) +
+  theme_minimal()
+
+```
+
+# Response Times
+
+To analyze response times, we are going to first include only correct trials
+
+```{r}
+cleandata_rt <- cleandata %>% filter(correct == 1)
+```
+
+Then, we are going to run another mixed level model using the same structure as the Accuracy model. Response times have a complicated relationship to accuracy, since they are the sum of retrieval times and perceptual-motor non-retrieval times.
+
+```{r}
+rt_model <- lmer(rt ~ condition # Fixed effect of condition 
+                 + (1|participant),   # Random intercept of participant
+                 #+ (0 + condition|participant),  # Random slope for participant 
+                 cleandata_rt)
+```
+
+
+
+### Comparing the model to other models
+
+We can ask ourselves whether this model is a good model -- for example, does it have the right amount of complexity? To answer this question, we can compare it to a _simpler_ model, whichn does not have any random effects, and to a _more complex_ model, which also includes a random slope per participant.
+
+
+```{r message=FALSE}
+rt_model_simple <- lm(rt ~ condition, cleandata_rt)
+
+rt_model_complex <- lmer(rt ~ condition # Fixed effect of condition 
+                         + (1|participant)   # Random intercept of participant
+                         + (0 + condition|participant),  # Random slope for participant 
+                         cleandata_rt)
+
+```
+
+
+We can see that our model is better than the simpler model:
+
+```{r message=FALSE}
+anova(rt_model, rt_model_simple) %>% 
+  tidy() %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("hover", "striped"))
+```
+
+while the complex model does not gain much in terms of fit.
+
+
+```{r message=FALSE}
+anova(rt_model, rt_model_complex) %>% 
+  tidy() %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("hover", "striped"))
+```
+
+### Statistical Results
+
+The results are here:
+
+```{r paged.print=TRUE}
+summary(rt_model)
+```
+
+And here is a nicer table formatting.
+
+```{r}
+rt_model %>%
+  tidy() %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("hover", "striped"))
+```
+
+And here it is in APA style:
+
+```{r}
+tab_model(rt_model)
+```
+
+
+### Visualizing the data
+
+And here is a visualization:
+
+```{r fig.height=5, fig.width=5, message=FALSE}
+cleandata_rt_agg <- cleandata_rt %>% group_by(participant, condition) %>%
+  summarise(RT = mean(rt))
+
+cleandata_rt_summary <- cleandata_rt_agg %>% group_by(condition) %>%
+  summarise(RT = mean(RT))
+
+ggplot(cleandata_rt_agg, aes(x=condition, y=RT, color=condition)) +
+  geom_line(color="grey", aes(group=participant), size=0.1) +
+
+  geom_point(position =   position_jitter(width=0.1), alpha=0.75, color="grey") +
+  scale_color_aaas() +
+  ggtitle("Mean Differences in Response Times") +
+  xlab("Condition") +
+  ylab("Response Times (ms)") +
+  stat_summary(geom="point", fun.data = "mean_se", size=3) +
+  stat_summary(geom="errorbar", fun.data = "mean_se", width=0.1) +
+  geom_text(data=cleandata_rt_summary, 
+            aes(x=condition, y=RT, label=paste(round(RT), "ms")), hjust= c(1.2, -0.2)) +
+  theme_minimal()
+```
+
+
+### Compare Data to Model Predictions
+
+How is the data compared to the linear model predictions? To do so, we can generate the model predictions and visualize them side by side to the data:
+
+```{r message=FALSE}
+cleandata_rt <- cleandata_rt %>% mutate(pred_rt = fitted(rt_model))
+
+cleandata_rt %>% pivot_longer(cols=c("rt", "pred_rt"),
+                              values_to = "RT",
+                              names_to = "type") -> cleandata_rt_long
+
+cleandata_rt_agg_pred <- cleandata_rt_long %>% 
+  mutate(type = replace(type, type == "rt",  "Observed")) %>% 
+  mutate(type = replace(type, type == "pred_rt", "Predicted")) %>%
+  group_by(participant, condition, type) %>%
+  summarise(RT = mean(RT))
+
+cleandata_rt_summary_pred <- cleandata_rt_agg_pred %>% 
+  group_by(condition, type) %>%
+  summarise(RT = mean(RT))
+
+ggplot(cleandata_rt_agg_pred, aes(x=condition, y=RT, color=condition)) +
+  facet_wrap(~ type) +
+  geom_line(color="grey", aes(group=participant), size=0.1) +
+  geom_point(position =   position_jitter(width=0.1), alpha=0.75, color="grey") +
+  scale_color_aaas() +
+  geom_text(data=cleandata_rt_summary_pred, 
+            aes(x=condition, 
+                y=RT, 
+                label=paste(round(RT), "ms")), 
+            hjust= c(-0.2)) +
+  ggtitle("Mean Differences in Response Times") +
+  xlab("Condition") +
+  stat_summary(geom="point", fun.data = "mean_se", size=3) +
+  stat_summary(geom="errorbar", fun.data = "mean_se", width=0.1) +
+  theme_minimal()
+```
+
+## Individual differences
+
+Some participants seem to have slopes in the _opposite_ direction, suggesting the use of the elaborative strategy. Is that the case? To examine this, we can go back to the complex RT model, which include random slopes as well as random intercepts.
+
+```{r message=FALSE}
+cleandata_rt <- cleandata_rt %>% mutate(pred_rt = fitted(rt_model_complex))
+
+cleandata_rt %>% pivot_longer(cols=c("rt", "pred_rt"),
+                              values_to = "RT",
+                              names_to = "type") -> cleandata_rt_long
+
+cleandata_rt_agg_pred <- cleandata_rt_long %>% 
+  mutate(type = replace(type, type == "rt",  "Observed")) %>% 
+  mutate(type = replace(type, type == "pred_rt", "Predicted")) %>%
+  group_by(participant, condition, type) %>%
+  summarise(RT = mean(RT))
+
+cleandata_rt_summary_pred <- cleandata_rt_agg_pred %>% 
+  group_by(condition, type) %>%
+  summarise(RT = mean(RT))
+
+ggplot(cleandata_rt_agg_pred, aes(x=condition, y=RT, color=condition)) +
+  facet_wrap(~ type) +
+  geom_line(color="grey", aes(group=participant), size=0.1) +
+  geom_point(position =   position_jitter(width=0.1), alpha=0.75, color="grey") +
+  scale_color_aaas() +
+  geom_text(data=cleandata_rt_summary_pred, 
+            aes(x=condition, 
+                y=RT, 
+                label=paste(round(RT), "ms")), 
+            hjust= c(-0.2)) +
+  ggtitle("Mean Differences in Response Times (with Random Slopes)") +
+  xlab("Condition") +
+  stat_summary(geom="point", fun.data = "mean_se", size=3) +
+  stat_summary(geom="errorbar", fun.data = "mean_se", width=0.1) +
+  theme_minimal()
+```
+
+Note that __all the slopes are negative__: this means that the apparent upward slopes are the effects of outlier data. 
+
+To check, let's examine the distribution of the slopes of each participant:
+
+```{r message=FALSE, warning=FALSE}
+coeffs <- coef(rt_model_complex)
+slopes <- coeffs$participant[,3] - coeffs$participant[,1]
+slopedata <- tibble(Slope=slopes)
+ggplot(slopedata, aes(x=Slope)) +
+  geom_histogram(bin=10, col="white") +
+  xlim(-400, 400) +
+  ylab("Number of Participants") +
+  ggtitle("Distribution of Best Fitting Random Slopes") +
+  theme_minimal() +
+  geom_vline(xintercept = 0, linetype="dashed", 
+                color = "black", size=1)
+```
