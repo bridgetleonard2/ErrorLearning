@@ -62,7 +62,7 @@ clean_errors <- left_join(guess, errors, by = c("participant", "cue")) %>%
 
 ```
 
-```{r}
+```{r message=FALSE}
 # Calculate individual accuracy and average reaction time
 indiv_summary <- clean_errors %>% 
   filter(correct == 1) %>% 
@@ -77,14 +77,17 @@ indiv_summary <- clean_errors %>%
 group_summary <- indiv_summary %>% 
   group_by(condition) %>% 
   summarize(
-    meanPerformance = mean(performance),
-    stdPerformance = sd(performance),
-    meanRT = mean(avgRT),
-    stdRT = sd(avgRT)
+    mean_performance = mean(performance),
+    stdev_performance = sd(performance),
+    mean_RT = mean(avgRT),
+    stdev_RT = sd(avgRT)
   ) %>% 
   mutate(condition = replace(condition, condition == 1, "error")) %>% 
   mutate(condition = replace(condition, condition == 2, "study")) 
 
+group_summary %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("hover", "striped"))
 ```
 
 # Summary Visuals
@@ -450,7 +453,7 @@ ggplot(cleandata_rt_agg_pred, aes(x=condition, y=RT, color=condition)) +
   theme_minimal()
 ```
 
-## Individual differences
+### Individual differences
 
 Some participants seem to have slopes in the _opposite_ direction, suggesting the use of the elaborative strategy. Is that the case? To examine this, we can go back to the complex RT model, which include random slopes as well as random intercepts.
 
