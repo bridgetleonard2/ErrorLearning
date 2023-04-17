@@ -141,6 +141,20 @@ legend(0.1, 2.5, legend=c("Study", "Error"), col=c("blue", "red"), lty=1, cex=0.
 
 ```
 
+```{r}
+ACCdens <- ggplot(indiv_summary, aes(x=performance, fill=condition)) +
+  geom_density(alpha=0.4) +
+  scale_fill_manual(values=c("#74A57F", "#FFA69E"))
+
+ACCdens
+
+RTdens <- ggplot(indiv_summary, aes(x=avgRT, fill=condition)) +
+  geom_density(alpha=0.4) +
+  scale_fill_manual(values=c("#74A57F", "#FFA69E"))
+
+RTdens
+
+```
 # Mixed Linear Models Analysis
 
 Let's analyze the data using mixed linear models. First, let's look at the distribution of response times to find if there are any obvious outliers:
@@ -255,7 +269,8 @@ cleandata_summary <- cleandata_agg %>% group_by(condition) %>%
 ggplot(cleandata_agg, aes(x=condition, y=Accuracy, color=condition)) +
   geom_line(color="grey", aes(group=participant), size=0.1) +
   geom_point(position =   position_jitter(width=0.1), alpha=0.75, color="grey") +
-  scale_color_aaas() +
+  # scale_color_aaas() +
+  scale_color_manual(values=c("#FFA69E", "#74A57F")) +
 
   ggtitle("Mean Differences in Accuracy") +
   xlab("Condition") +
@@ -296,11 +311,13 @@ ggplot(cleandata_agg_pred, aes(x=condition, y=Accuracy, color=condition)) +
   facet_wrap(~ type) +
   geom_line(color="grey", aes(group=participant), size=0.1) +
   geom_point(position =   position_jitter(width=0.1), alpha=0.75, color="grey") +
-  scale_color_aaas() +
+  # scale_color_aaas() +
+  scale_color_manual(values=c("#674b94", "#c9a818")) +
+  
   geom_text(data=cleandata_summary_pred, 
             aes(x=condition, 
                 y=Accuracy, 
-                label=paste(round(Accuracy*100, 2), "%")), 
+                label=paste(round(Accuracy*100, 2), "%")), size=4.5,
             hjust= c(-0.2)) +
   ggtitle("Mean Differences in Accuracy") +
   xlab("Condition") +
@@ -440,11 +457,13 @@ ggplot(cleandata_rt_agg_pred, aes(x=condition, y=RT, color=condition)) +
   facet_wrap(~ type) +
   geom_line(color="grey", aes(group=participant), size=0.1) +
   geom_point(position =   position_jitter(width=0.1), alpha=0.75, color="grey") +
-  scale_color_aaas() +
+  # scale_color_aaas() +
+  scale_color_manual(values=c("#674b94", "#c9a818")) +
+  
   geom_text(data=cleandata_rt_summary_pred, 
             aes(x=condition, 
                 y=RT, 
-                label=paste(round(RT), "ms")), 
+                label=paste(round(RT), "ms")),size=4.2,
             hjust= c(-0.2)) +
   ggtitle("Mean Differences in Response Times") +
   xlab("Condition") +
