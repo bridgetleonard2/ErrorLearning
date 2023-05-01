@@ -317,7 +317,7 @@ ggplot(cleandata_agg_pred, aes(x=condition, y=Accuracy, color=condition)) +
   geom_text(data=cleandata_summary_pred, 
             aes(x=condition, 
                 y=Accuracy, 
-                label=paste(round(Accuracy*100, 2), "%")), size=4.5,
+                label=paste(round(Accuracy*100, 2), "%")),
             hjust= c(-0.2)) +
   ggtitle("Mean Differences in Accuracy") +
   xlab("Condition") +
@@ -463,7 +463,7 @@ ggplot(cleandata_rt_agg_pred, aes(x=condition, y=RT, color=condition)) +
   geom_text(data=cleandata_rt_summary_pred, 
             aes(x=condition, 
                 y=RT, 
-                label=paste(round(RT), "ms")),size=4.2,
+                label=paste(round(RT), "ms")),
             hjust= c(-0.2)) +
   ggtitle("Mean Differences in Response Times") +
   xlab("Condition") +
@@ -526,4 +526,20 @@ ggplot(slopedata, aes(x=Slope)) +
   theme_minimal() +
   geom_vline(xintercept = 0, linetype="dashed", 
                 color = "black", size=1)
+```
+
+Make a visual for LL:
+```{r}
+lldata <- read_csv("LLresults.csv")
+```
+
+```{r}
+ggplot(lldata, aes(x=elab.LL, y=med.LL, color = best.model)) + geom_point(alpha = 0.7) +
+  scale_color_manual(values=c("#c9a818", "#674b94")) +
+  theme(legend.position="right") +
+  ggtitle("Loglikelihood of Model Fit by Participant") +
+  xlab("Elaborative Loglikelihood") +
+  ylab("Mediator Loglikelihood")  + 
+  labs(color = "Best Model") +
+  theme_minimal()
 ```
