@@ -17,6 +17,7 @@ library(tidyr)
 library(readxl)
 library(ggplot2)
 library(PairedData)
+library(hash)
 
 library(lme4)      # Mixed models
 library(lmerTest)  # Summary and p-values for mixed models
@@ -74,6 +75,12 @@ indiv_summary <- clean_errors %>%
   mutate(condition = replace(condition, condition == 1, "error")) %>% 
   mutate(condition = replace(condition, condition == 2, "study")) 
 
+avg_perf = mean(indiv_summary$performance)
+std_perf = sd(indiv_summary$performance)
+avg_RT = mean(indiv_summary$avgRT)
+std_RT = sd(indiv_summary$avgRT)
+
+
 group_summary <- indiv_summary %>% 
   group_by(condition) %>% 
   summarize(
@@ -90,71 +97,7 @@ group_summary %>%
   kable_styling(bootstrap_options = c("hover", "striped"))
 ```
 
-# Summary Visuals
-```{r message=FALSE}
-# Individual participant performance by condition with slope detail
-calc_sign <- function(numbers) {
-  slope = c()
-  for (i in 1:length(numbers)) {
-    if (numbers[i] < 0) {
-    slope[i] = "negative"
-  } else if (numbers[i] > 0) {
-    slope[i] = "positive"
-  } else {
-        slope[i] = "zero"
-      }
-  }
-  return(slope)
-}
 
-slope_data <- indiv_summary %>% 
-  group_by(participant) %>% 
-  mutate(difference = diff(performance)) %>% 
-  mutate(slope = calc_sign(difference)) 
-
-ggplot(data = slope_data) +
-  geom_point(mapping = aes(x = condition, y = performance, color = slope)) +
-  geom_line(mapping = aes(x = condition, y = performance, group = participant, color = slope)) +
-  labs(
-    title = "Performance Compared by Condition",
-    x = "Condition",
-    y = "Performance"
-  )
-
-# kernel density plot
-clean_study <- indiv_summary %>% 
-  filter(condition == "study") %>% 
-  dplyr::select(performance)
-study <- clean_study$performance
-
-clean_error <- indiv_summary %>% 
-  filter(condition == "error") %>% 
-  dplyr::select(performance)
-error <- clean_error$performance
-
-study_dens <- density(study)
-error_dens <- density(error)
-
-plot(study_dens, col='blue', ylim=c(0,3), main="Density Plot of Performance", xlab="Accuracy")
-lines(error_dens, col='red')
-legend(0.1, 2.5, legend=c("Study", "Error"), col=c("blue", "red"), lty=1, cex=0.8)
-
-```
-
-```{r}
-ACCdens <- ggplot(indiv_summary, aes(x=performance, fill=condition)) +
-  geom_density(alpha=0.4) +
-  scale_fill_manual(values=c("#74A57F", "#FFA69E"))
-
-ACCdens
-
-RTdens <- ggplot(indiv_summary, aes(x=avgRT, fill=condition)) +
-  geom_density(alpha=0.4) +
-  scale_fill_manual(values=c("#74A57F", "#FFA69E"))
-
-RTdens
-
-```
 # Mixed Linear Models Analysis
 
 Let's analyze the data using mixed linear models. First, let's look at the distribution of response times to find if there are any obvious outliers:
@@ -180,7 +123,7 @@ cleandata <- clean_errors %>% filter(rt > 200, rt < 15000)
 Finally, we are going to rename the conditions to make sure we are using meaningful labels, and make sure that correct is between 0 and 1.
 
 ```{r}
-cleandata <- cleandata %>% 
+cleandata <- cleandata %>%  
   mutate(condition = replace(condition, condition == 1, "error")) %>% 
   mutate(condition = replace(condition, condition == 2, "study")) %>%
   mutate(correct = replace(correct, correct == 2, 0))
@@ -270,7 +213,7 @@ ggplot(cleandata_agg, aes(x=condition, y=Accuracy, color=condition)) +
   geom_line(color="grey", aes(group=participant), size=0.1) +
   geom_point(position =   position_jitter(width=0.1), alpha=0.75, color="grey") +
   # scale_color_aaas() +
-  scale_color_manual(values=c("#FFA69E", "#74A57F")) +
+  scale_color_manual(values=c("#674b94", "#c9a818")) +
 
   ggtitle("Mean Differences in Accuracy") +
   xlab("Condition") +
@@ -323,7 +266,13 @@ ggplot(cleandata_agg_pred, aes(x=condition, y=Accuracy, color=condition)) +
   xlab("Condition") +
   stat_summary(geom="point", fun.data = "mean_se", size=3) +
   stat_summary(geom="errorbar", fun.data = "mean_se", width=0.1) +
-  theme_minimal()
+  labs(color = "Condition") +
+  theme_minimal() +
+theme(legend.position = c(0, 1), 
+      legend.background = element_rect(fill="white",size=0.2, 
+                                       linetype="solid", colour ="lightgrey"),
+      text = element_text(size=15),
+      plot.title = element_text(hjust = 0.5))
 
 ```
 
@@ -420,7 +369,7 @@ ggplot(cleandata_rt_agg, aes(x=condition, y=RT, color=condition)) +
   geom_line(color="grey", aes(group=participant), size=0.1) +
 
   geom_point(position =   position_jitter(width=0.1), alpha=0.75, color="grey") +
-  scale_color_aaas() +
+  scale_color_manual(values=c("#674b94", "#c9a818")) +
   ggtitle("Mean Differences in Response Times") +
   xlab("Condition") +
   ylab("Response Times (ms)") +
@@ -463,13 +412,19 @@ ggplot(cleandata_rt_agg_pred, aes(x=condition, y=RT, color=condition)) +
   geom_text(data=cleandata_rt_summary_pred, 
             aes(x=condition, 
                 y=RT, 
-                label=paste(round(RT), "ms")),
+                label=paste(round(RT), "ms")), size=4.5,
             hjust= c(-0.2)) +
   ggtitle("Mean Differences in Response Times") +
   xlab("Condition") +
   stat_summary(geom="point", fun.data = "mean_se", size=3) +
   stat_summary(geom="errorbar", fun.data = "mean_se", width=0.1) +
-  theme_minimal()
+  labs(color = "Condition") +
+  theme_minimal() +
+theme(legend.position = c(0, 1), 
+      legend.background = element_rect(fill="white",size=0.2, 
+                                       linetype="solid", colour ="lightgrey"),
+      text = element_text(size=15),
+      plot.title = element_text(hjust = 0.5))
 ```
 
 ### Individual differences
@@ -497,7 +452,7 @@ ggplot(cleandata_rt_agg_pred, aes(x=condition, y=RT, color=condition)) +
   facet_wrap(~ type) +
   geom_line(color="grey", aes(group=participant), size=0.1) +
   geom_point(position =   position_jitter(width=0.1), alpha=0.75, color="grey") +
-  scale_color_aaas() +
+  scale_color_manual(values=c("#674b94", "#c9a818")) +
   geom_text(data=cleandata_rt_summary_pred, 
             aes(x=condition, 
                 y=RT, 
@@ -530,16 +485,31 @@ ggplot(slopedata, aes(x=Slope)) +
 
 Make a visual for LL:
 ```{r}
-lldata <- read_csv("LLresults.csv")
+lldata <- read.csv("LL_model1.csv")
+lldata <- lldata %>% 
+  filter(X != 61)
 ```
 
 ```{r}
-ggplot(lldata, aes(x=elab.LL, y=med.LL, color = best.model)) + geom_point(alpha = 0.7) +
-  scale_color_manual(values=c("#c9a818", "#674b94")) +
-  theme(legend.position="right") +
-  ggtitle("Loglikelihood of Model Fit by Participant") +
-  xlab("Elaborative Loglikelihood") +
-  ylab("Mediator Loglikelihood")  + 
-  labs(color = "Best Model") +
-  theme_minimal()
+mean <- mean(lldata$diff.LL)
+
+elabMean <- lldata %>% 
+  filter(best.model == "Elaborative") %>% 
+  pull(diff.LL) %>% 
+  mean()
+
+ggplot(lldata, aes(x=diff.LL, fill=best.model)) +
+geom_histogram(color="#e9ecef", alpha=0.6, position = 'identity') +
+scale_fill_manual(values=c("#c9a818", "#674b94")) +
+geom_vline(xintercept=mean, col="#6b2537", linetype="dotted", size=0.7) +
+geom_vline(xintercept=0, col="#86A397", linetype="dotted", size=0.7) +
+xlab(expression(log~italic(L(M[Mediator]))~-~log~italic(L(M[Elaborative])))) +
+ylab("Number of Participants")  + 
+labs(fill = "Best-fitting Model") +
+theme_minimal() +
+theme(legend.position = c(0.15, 0.85), 
+      legend.background = element_rect(fill="white",size=0.5, 
+                                       linetype="solid", colour ="lightgrey"),
+      text = element_text(size=15))
+
 ```
