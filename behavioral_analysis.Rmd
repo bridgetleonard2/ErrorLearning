@@ -255,7 +255,7 @@ ggplot(cleandata_agg_pred, aes(x=condition, y=Accuracy, color=condition)) +
   geom_line(color="grey", aes(group=participant), size=0.1) +
   geom_point(position =   position_jitter(width=0.1), alpha=0.75, color="grey") +
   # scale_color_aaas() +
-  scale_color_manual(values=c("#674b94", "#c9a818")) +
+  scale_color_manual(values=c("#DC143C", "#008080")) +
   
   geom_text(data=cleandata_summary_pred, 
             aes(x=condition, 
@@ -407,7 +407,7 @@ ggplot(cleandata_rt_agg_pred, aes(x=condition, y=RT, color=condition)) +
   geom_line(color="grey", aes(group=participant), size=0.1) +
   geom_point(position =   position_jitter(width=0.1), alpha=0.75, color="grey") +
   # scale_color_aaas() +
-  scale_color_manual(values=c("#674b94", "#c9a818")) +
+  scale_color_manual(values=c("#DC143C", "#008080")) +
   
   geom_text(data=cleandata_rt_summary_pred, 
             aes(x=condition, 
@@ -452,7 +452,7 @@ ggplot(cleandata_rt_agg_pred, aes(x=condition, y=RT, color=condition)) +
   facet_wrap(~ type) +
   geom_line(color="grey", aes(group=participant), size=0.1) +
   geom_point(position =   position_jitter(width=0.1), alpha=0.75, color="grey") +
-  scale_color_manual(values=c("#674b94", "#c9a818")) +
+  scale_color_manual(values=cc("#DC143C", "#20B2AA")) +
   geom_text(data=cleandata_rt_summary_pred, 
             aes(x=condition, 
                 y=RT, 
