@@ -275,7 +275,58 @@ theme(legend.position = c(0, 1),
       plot.title = element_text(hjust = 0.5))
 
 ```
+```{r}
+# Install and load necessary packages
+library(showtext)
+library(ggplot2)
 
+# Set the font to Open Sans
+showtext_auto()
+
+# Your existing code...
+cleandata <- cleandata %>% mutate(pred_correct = fitted(acc_model))
+
+cleandata %>% pivot_longer(cols=c("correct", "pred_correct"),
+                           values_to = "accuracy",
+                           names_to = "type") -> cleandata_long
+
+cleandata_agg_pred <- cleandata_long %>% 
+  mutate(type = replace(type, type == "correct",  "Observed")) %>% 
+  mutate(type = replace(type, type == "pred_correct", "Predicted")) %>%
+  group_by(participant, condition, type) %>%
+  summarise(Accuracy = mean(accuracy))
+
+cleandata_summary_pred <- cleandata_agg_pred %>% 
+  group_by(condition, type) %>%
+  summarise(Accuracy = mean(Accuracy))
+
+# Updated ggplot code
+ggplot(cleandata_agg_pred, aes(x = condition, y = Accuracy, color = condition)) +
+  facet_wrap(~ type, scales = "free_y") +  # Allow y-axis scales to vary
+  geom_line(aes(group = participant), size = 0.2, color = "lightgrey") +  # Neutral line color
+  geom_point(position = position_jitter(width = 0.1), alpha = 0.6, size = 2) +
+  scale_color_manual(values = c("#e74c3c", "#2ecc71")) +  # Adjusted color palette
+  geom_text(data = cleandata_summary_pred, 
+            aes(x = condition, y = Accuracy, 
+                label = paste(round(Accuracy * 100, 2), "%")),
+            hjust = -0.2, size = 4.5, color = "black") +  # Improved text aesthetics
+  ggtitle("Mean Differences in Accuracy") +
+  xlab("Condition") +
+  ylab("Accuracy") +  # Added y-axis label
+  stat_summary(geom = "point", fun.data = "mean_se", size = 3) +
+  stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0.1) +
+  labs(color = "Condition") +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",  # Moved legend to the bottom
+    legend.background = element_rect(fill = "white", size = 0.2, linetype = "solid", colour = "lightgrey"),
+    text = element_text(size = 12, family = "sans"),  # Adjusted font size
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold", family = "sans"),  # Adjusted title aesthetics
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12, face = "bold")
+  )
+
+```
 # Response Times
 
 To analyze response times, we are going to first include only correct trials
