@@ -4,8 +4,8 @@ output:
   flexdashboard::flex_dashboard:
     theme:
       bg: "#FFFFFF"
-      fg: "#734439" 
-      primary: "#7ab3bf"
+      fg: "#000000" 
+      primary: "#FFA500"
       base_font:
         google: Prompt
       code_font:
@@ -30,7 +30,9 @@ library(sjPlot)   # APA-style tables for mixed models
 library(broom.mixed)
 library(ggsci)
 library(reticulate)
-use_python("/Users/bridget/anaconda3/bin/python3")
+# use_python("/Users/bridget/anaconda3/bin/python3")
+# Switch python for windows
+use_python("C:\\Users\\Bridget Leonard\\AppData\\Local\\Programs\\Python\\Python312")
 
 # Graphics
 library(ggplot2)
