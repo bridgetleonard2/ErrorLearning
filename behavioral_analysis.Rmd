@@ -327,6 +327,11 @@ ggplot(cleandata_agg_pred, aes(x = condition, y = Accuracy, color = condition)) 
   )
 
 ```
+
+```{r}
+# save clean data
+write.csv(cleandata, 'clean_data.csv')
+```
 # Response Times
 
 To analyze response times, we are going to first include only correct trials

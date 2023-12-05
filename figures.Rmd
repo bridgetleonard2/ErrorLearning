@@ -70,7 +70,7 @@ cleandata_summary_pred <- cleandata_summary_pred %>% full_join(se_data)
 
 bar_colors <- c("#2ecc71", "#e74c3c")
                 
-summ_barchart <- plot_ly(cleandata_summary_pred %>% filter(type == 'Observed'), x = ~condition, y =~Accuracy, type= 'bar', name = 'Observed',
+summ_barchart <- plot_ly(cleandata_agg_pred %>% filter(type == 'Observed'), x = ~condition, y =~Accuracy, type= 'box', name = 'Observed',
                          error_y = ~list(array = se_data$accuracy_se, color = '#000000'),
                          marker = list(color = bar_colors)) %>%
   layout(title = 'Final Test Accuracy',
@@ -78,6 +78,22 @@ summ_barchart <- plot_ly(cleandata_summary_pred %>% filter(type == 'Observed'), 
          yaxis = list(title = 'Accuracy'),
          barmode= 'group')
 summ_barchart
+```
+
+```{r}
+# Define colors for each boxplot
+colors <- c("#2ecc71", "#e74c3c")
+
+study_box <- cleandata_agg_pred %>% filter(type=='Observed' & condition == 'study') %>% pull(Accuracy)
+error_box <- cleandata_agg_pred %>% filter(type=='Observed' & condition == 'error') %>% pull(Accuracy)
+
+plot_ly(y = ~study_box, type = 'box', name = 'Study Items', marker = list(color = colors[1])) %>% 
+  add_trace(y=~error_box, type= 'box', name = 'Error Items', marker = list(color = colors[2])) %>% 
+  layout(
+    title = "Performance on Final Test",
+    yaxis = list(title = "Accuracy")
+  )
+
 ```
 
 ```{r warning=FALSE}
