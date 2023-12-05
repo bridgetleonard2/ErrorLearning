@@ -69,35 +69,6 @@ se_data <- full_join(Ose_data, Pse_data)
 cleandata_summary_pred <- cleandata_summary_pred %>% full_join(se_data)
 ```
 
-```{r}
-
-bar_colors <- c("#2ecc71", "#e74c3c")
-                
-summ_barchart <- plot_ly(cleandata_agg_pred %>% filter(type == 'Observed'), x = ~condition, y =~Accuracy, type= 'box', name = 'Observed',
-                         error_y = ~list(array = se_data$accuracy_se, color = '#000000'),
-                         marker = list(color = bar_colors)) %>%
-  layout(title = 'Final Test Accuracy',
-         xaxis = list(title = 'Condition', categoryorder = 'category descending'),
-         yaxis = list(title = 'Accuracy'),
-         barmode= 'group')
-summ_barchart
-```
-
-```{r}
-# Define colors for each boxplot
-colors <- c("#2ecc71", "#e74c3c")
-
-study_box <- cleandata_agg_pred %>% filter(type=='Observed' & condition == 'study') %>% pull(Accuracy)
-error_box <- cleandata_agg_pred %>% filter(type=='Observed' & condition == 'error') %>% pull(Accuracy)
-
-plot_ly(y = ~study_box, type = 'box', name = 'Study Items', marker = list(color = colors[1])) %>% 
-  add_trace(y=~error_box, type= 'box', name = 'Error Items', marker = list(color = colors[2])) %>% 
-  layout(
-    title = "Performance on Final Test",
-    yaxis = list(title = "Accuracy")
-  )
-
-```
 
 ```{r warning=FALSE}
 p1 <- plot_ly(data = cleandata_agg_pred %>% filter(type=="Observed") %>% group_by(participant), x = ~cond, y = ~Accuracy, color = ~condition) %>%
@@ -115,14 +86,14 @@ p1 <- plot_ly(data = cleandata_agg_pred %>% filter(type=="Observed") %>% group_b
               name="Average - Error") %>% 
   add_markers(data = cleandata_summary_pred %>% filter(type =="Observed") %>%  filter(condition=="study"), x = ~cond, y = ~Accuracy, error_y = list(type= "data", array = ~accuracy_se,color = '#2ecc71', thickness=2), type = "scatter", mode = "markers", marker = list(color = "#2ecc71", size = 12), legendgroup="average",
               name="Average - Study") %>% 
-  add_text(data = cleandata_summary_pred %>% filter(condition == "error" & type =="Observed"), x = ~cond, y = ~Accuracy, text = ~paste0(round(Accuracy * 100, 2), "%"), hjust = -0.5, textfont=list(color = c("#000000"), size=16), legendgroup="average",
+  add_text(data = cleandata_summary_pred %>% filter(condition == "error" & type =="Observed"), x = ~cond, y = ~Accuracy, text = ~paste0(round(Accuracy * 100, 2), "%"), hjust = -0.5, textfont=list(color = c("#000000"), size=18), legendgroup="average",
               name="Average - Error", showlegend=FALSE) %>%
-  add_text(data = cleandata_summary_pred %>% filter(condition == "study" & type =="Observed"), x = ~cond, y = ~Accuracy, text = ~paste0(round(Accuracy * 100, 2), "%"), hjust = -0.2, textfont=list(color = c("#000000"), size=16), legendgroup="average",
+  add_text(data = cleandata_summary_pred %>% filter(condition == "study" & type =="Observed"), x = ~cond, y = ~Accuracy, text = ~paste0(round(Accuracy * 100, 2), "%"), hjust = -0.2, textfont=list(color = c("#000000"), size=18), legendgroup="average",
               name="Average - Study", showlegend=FALSE) %>%
   style(textposition = "top right") %>%
   layout(
-    title = "Mean Differences in Accuracy",
-    xaxis = list(title = "Condition", autotypenumbers = "strict", range = c(0.5, 2.5), ticktext = list("Study", "Error"), 
+    title = list(text= "Final Test Performance", size = 18),
+    xaxis = list(title = "Condition", autotypenumbers = "strict", range = c(0.5, 2.5), ticktext = list("Study Items", "Error Items"), 
       tickvals = list(1, 2),
       tickmode = "array"),
     yaxis = list(title = "Accuracy"),
@@ -247,7 +218,7 @@ p1  # Print the plot
 ```{r}
 library(htmlwidgets)
 # Assuming p1 is your Plotly plot object
-htmlwidgets::saveWidget(p1, file = "summary.html")
+htmlwidgets::saveWidget(p1, file = "shiny_app/error_learning/www/summary.html")
 
 
 ```
@@ -281,15 +252,51 @@ pie1 <- plot_ly(
   marker = list(colors = colors, line = list(color = '#FFFFFF', width = 1))
 ) %>%
 layout(
-  title = "Participants who did better on...",
+  title = list(text="Better performance on Study vs Error",size=18),
   showlegend = FALSE,
-  font = list(family = "Open Sans", size = 16, color = "#555"),
-  paper_bgcolor = '#f5f5f5',  # Light gray paper background
-  plot_bgcolor = '#ffffff'   # White plot background
+  font = list(size = 16, color = "#000000")
 )
 
 # Print the chart
 pie1
 
-htmlwidgets::saveWidget(pie1, file = "accuracy.html")
+htmlwidgets::saveWidget(pie1, file = "shiny_app/error_learning/www/accuracy.html")
+```
+
+
+```{r}
+lldata <- read.csv("LL_model1.csv")
+lldata <- lldata %>% 
+  filter(X != 61)
+```
+
+```{r}
+colors = c("#f39c12", "#9b59b6")
+
+ll_pie <- lldata %>% 
+  dplyr::select(best.model) %>% 
+  group_by(best.model) %>% 
+  summarize(count = n())
+
+# Create pie chart with custom colors
+pie2 <- plot_ly(
+  data = ll_pie,
+  labels = ~best.model,
+  values = ~count,
+  type = 'pie',
+  textinfo = "label+percent",
+  hoverinfo = "text+value",
+  hole = 0.6,
+  marker = list(colors = colors, line = list(color = '#FFFFFF', width = 1))
+) %>%
+layout(
+  title = list(text="Type of Learner",size=18),
+  showlegend = FALSE,
+  font = list(size = 16, color = "#000000")
+)
+
+# Print the chart
+pie2
+
+htmlwidgets::saveWidget(pie1, file = "shiny_app/error_learning/www/learner.html")
 ```
