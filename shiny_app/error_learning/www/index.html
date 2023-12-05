@@ -69,7 +69,7 @@
     }
 
     .section {
-      height: 500px;
+      height: 1000px;
       padding: 20px;
     }
 
@@ -98,6 +98,50 @@
     
     .section h2 {
       text-align: center; /* Center the section headings */
+    }
+    
+    .section2-content {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section2-text {
+      width: 45%; /* Adjust the width as needed */
+    }
+
+    .section2-image {
+      width: 50%; /* Adjust the width as needed */
+    }
+
+    .section2-image img {
+      width: 100%;
+      height: auto;
+    }
+    
+    .definition-container {
+      text-align: left;
+    }
+
+    .definition-container.grid-layout {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 10px;
+    }
+
+    .big-word {
+      font-size: 2em;
+      font-weight: bold;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center; /* Center the big word vertically */
+      justify-content: center; /* Center the big word horizontally */
+      height: 100%; /* Ensure the container takes full height for vertical centering */
+    }
+
+    .definition {
+      font-size: 1em;
     }
     
     /* Add these styles in the head section of your HTML file */
@@ -157,11 +201,33 @@
     <div id="section2" class="section">
       <h2>Modeling</h2>
       <!-- Your HTML content for Section 2 -->
+      <p>In this study, we investigated two theories of error learning through the lens of a popular cognitive architecture, ACT-R. This allowed us to make 
+          empirically supported mathematical predictions of human memory that differ theory to theory, or model to model.</p>
+      <div class="section2-content">
+        <div class="section2-text">
+            <div class="definition-container grid-layout">
+            <div class="big-word">Elaborative Hypothesis</div>
+            <div class="definition">
+              Related errors increase learning by activating the semantic network between cue and target, creating a more meaningful story behind the fact. In ACT-R, this means an error memory would have more activation, or be easier to retrieve and thus, it'd be remembered faster than a normal study memory.
+            </div>
+            <div class="big-word">Mediator Hypothesis</div>
+            <div class="definition">
+              Errors are used as a secondary cue to retrieve the correct answer. In ACT-R, this means the error memory is recalled before the correct memory is recalled after. Since this is a two-step process, it takes longer to remember these mediator error memories than a normal study memory.
+            </div>
+          </div>
+        </div>
+        <div class="section2-image">
+          <img src="mechanisms.png" alt="Modeling Image">
+          <p style="text-align: right;"><strong><span style="color: #f39c12;">Elaborative hypothesis</span></strong> = shorter response times<br><strong><span style="color: #9b59b6;">Mediator hypothesis</span></strong> = longer response times</p>
+        </div>
+      </div>
     </div>
 
     <div id="section3" class="section">
       <h2>Individual Differences</h2>
       <!-- Your HTML content for Section 3 -->
+      <p>As seen in the observed data and a model of the data that account for fixed and random effects like 
+      individual learning differences, we see that response times are <strong>longer</strong> in the error condition, supporting use of mediation.</p>
     </div>
 
     <div id="section4" class="section">

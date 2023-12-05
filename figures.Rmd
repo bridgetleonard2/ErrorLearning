@@ -1,0 +1,233 @@
+---
+title: "Figures"
+output: html_document
+date: "2023-12-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(plotly)
+```
+
+```{r}
+cleandata <- read.csv("behavioral_data/clean_data.csv")
+```
+
+
+```{r}
+# Mixed Linear Model
+acc_model <- glmer(correct ~ condition # Fixed effect of condition
+                   + (1|participant),  # Interface for participant
+                   family=binomial, 
+                   cleandata)
+
+cleandata <- cleandata %>% mutate(pred_correct = fitted(acc_model))
+
+cleandata %>% pivot_longer(cols=c("correct", "pred_correct"),
+                           values_to = "accuracy",
+                           names_to = "type") -> cleandata_long
+
+cleandata_agg_pred <- cleandata_long %>% 
+  mutate(type = replace(type, type == "correct",  "Observed")) %>% 
+  mutate(type = replace(type, type == "pred_correct", "Predicted")) %>%
+  group_by(participant, condition, type) %>%
+  summarise(Accuracy = mean(accuracy))
+
+cleandata_summary_pred <- cleandata_agg_pred %>% 
+  group_by(condition, type) %>%
+  summarise(Accuracy = mean(Accuracy))
+
+cleandata_agg_pred <- cleandata_agg_pred %>% 
+  mutate(cond = case_when(condition == "study" ~ 1, condition == "error" ~ 2)) %>% 
+  mutate(cond = jitter(cond))
+
+cleandata_summary_pred <- cleandata_summary_pred %>% 
+  mutate(cond = case_when(condition == "study" ~ 1, condition == "error" ~ 2))
+
+Ose_data <- cleandata_agg_pred %>% 
+  filter(type == "Observed") %>% 
+  group_by(condition) %>% 
+  summarize(
+    accuracy_se = std.error(Accuracy)
+  )
+Pse_data <- cleandata_agg_pred %>% 
+  filter(type == "Predicted") %>% 
+  group_by(condition) %>% 
+  summarize(
+    accuracy_se = std.error(Accuracy)
+  )
+```
+
+```{r}
+Ose_data <- Ose_data %>% mutate(type = 'Observed')
+Pse_data <- Pse_data %>% mutate(type = 'Predicted')
+se_data <- full_join(Ose_data, Pse_data)
+
+cleandata_summary_pred <- cleandata_summary_pred %>% full_join(se_data)
+```
+
+```{r}
+
+bar_colors <- c("#2ecc71", "#e74c3c")
+                
+summ_barchart <- plot_ly(cleandata_summary_pred %>% filter(type == 'Observed'), x = ~condition, y =~Accuracy, type= 'bar', name = 'Observed',
+                         error_y = ~list(array = se_data$accuracy_se, color = '#000000'),
+                         marker = list(color = bar_colors)) %>%
+  layout(title = 'Final Test Accuracy',
+         xaxis = list(title = 'Condition', categoryorder = 'category descending'),
+         yaxis = list(title = 'Accuracy'),
+         barmode= 'group')
+summ_barchart
+```
+
+```{r warning=FALSE}
+p1 <- plot_ly(data = cleandata_agg_pred %>% filter(type=="Observed") %>% group_by(participant), x = ~cond, y = ~Accuracy, color = ~condition) %>%
+  add_markers(alpha = 0.75, color = I("#D9D6C7"), split = ~participant, marker = list(size=5),
+              text = ~Accuracy,
+              textposition = "auto",
+              hoverinfo = "text",
+              hovertext = ~paste0("Participant: ", participant,
+                                "<br> Observed Accuracy: ", round(Accuracy*100, 2), "%"),
+              legendgroup="participants", name=~paste("Participant -", participant)) %>% 
+  add_lines(color = I("#D9D6C7"), line = list(width = 0.3), split = ~participant,
+            legendgroup="participants", name=~paste("Participant -", participant),
+            showlegend=FALSE) %>%
+  add_markers(data = cleandata_summary_pred %>% filter(type =="Observed") %>% full_join(Ose_data, by="condition") %>%  filter(condition=="error"), x = ~cond, y = ~Accuracy, error_y = list(type= "data", array = ~accuracy_se,color = '#e74c3c', thickness=2), type = "scatter", mode = "markers", marker = list(color = "#e74c3c", size = 12), legendgroup="average",
+              name="Average - Error") %>% 
+  add_markers(data = cleandata_summary_pred %>% filter(type =="Observed") %>% full_join(Ose_data, by="condition") %>%  filter(condition=="study"), x = ~cond, y = ~Accuracy, error_y = list(type= "data", array = ~accuracy_se,color = '#2ecc71', thickness=2), type = "scatter", mode = "markers", marker = list(color = "#2ecc71", size = 12), legendgroup="average",
+              name="Average - Study") %>% 
+  add_text(data = cleandata_summary_pred %>% filter(condition == "error" & type =="Observed"), x = ~cond, y = ~Accuracy, text = ~paste0(round(Accuracy * 100, 2), "%"), hjust = -0.5, textfont=list(color = c("#000000"), size=16), legendgroup="average",
+              name="Average - Error", showlegend=FALSE) %>%
+  add_text(data = cleandata_summary_pred %>% filter(condition == "study" & type =="Observed"), x = ~cond, y = ~Accuracy, text = ~paste0(round(Accuracy * 100, 2), "%"), hjust = -0.2, textfont=list(color = c("#000000"), size=16), legendgroup="average",
+              name="Average - Study", showlegend=FALSE) %>%
+  style(textposition = "top right") %>%
+  layout(
+    title = "Mean Differences in Accuracy",
+    xaxis = list(title = "Condition", autotypenumbers = "strict", range = c(0.5, 2.5), ticktext = list("Study", "Error"), 
+      tickvals = list(1, 2),
+      tickmode = "array"),
+    yaxis = list(title = "Accuracy"),
+    legend = list(traceorder='reversed'),
+    showlegend = FALSE,
+    hovermode = "closest"
+  ) 
+```
+
+```{r}
+library(plotly)
+library(dplyr)
+
+# Your existing data and code
+
+# Updated Plotly code
+p1 <- plot_ly(
+  data = cleandata_agg_pred %>% filter(type == "Observed") %>% group_by(participant),
+  x = ~cond,
+  y = ~Accuracy,
+  color = ~condition
+) %>%
+  add_markers(
+    alpha = 0.75,
+    color = I("#D9D6C7"),  # Blue color
+    split = ~participant,
+    marker = list(size = 8, line = list(color = 'white', width = 0.5)),
+    text = ~paste0(round(Accuracy * 100, 2), "%"),
+    hoverinfo = "text",
+    hovertext = ~paste0(
+      "Participant: ",
+      participant,
+      "<br> Observed Accuracy: ",
+      round(Accuracy * 100, 2),
+      "%"
+    ),
+    showlegend = FALSE
+  ) %>%
+  add_lines(
+    color = I("#D9D6C7"),
+    line = list(width = 1),
+    split = ~participant,
+    showlegend = FALSE
+  ) %>%
+  add_markers(
+    data = cleandata_summary_pred %>% filter(type == "Observed") %>% full_join(Ose_data, by = "condition") %>% filter(condition == "error"),
+    x = ~cond,
+    y = ~Accuracy,
+    error_y = list(type = "data", array = ~accuracy_se, color = '#e74c3c', thickness = 2),
+    type = "scatter",
+    mode = "markers",
+    marker = list(color = "#e74c3c", size = 12),
+    legendgroup = "average",
+    name = "Average - Error"
+  ) %>%
+  add_markers(
+    data = cleandata_summary_pred %>% filter(type == "Observed") %>% full_join(Ose_data, by = "condition") %>% filter(condition == "study"),
+    x = ~cond,
+    y = ~Accuracy,
+    error_y = list(type = "data", array = ~accuracy_se, color = '#2ecc71', thickness = 2),
+    type = "scatter",
+    mode = "markers",
+    marker = list(color = "#2ecc71", size = 12),
+    legendgroup = "average",
+    name = "Average - Study",
+    showlegend = FALSE
+  ) %>%
+  add_text(
+    data = cleandata_summary_pred %>% filter(condition == "error" & type == "Observed"),
+    x = ~cond,
+    y = ~Accuracy,
+    text = ~paste0(round(Accuracy * 100, 2), "%"),
+    hjust = -0.5,
+    textfont = list(color = c("#000000"), size = 18),
+    legendgroup = "average",
+    name = "Average - Error",
+    showlegend = FALSE
+  ) %>%
+  add_text(
+    data = cleandata_summary_pred %>% filter(condition == "study" & type == "Observed"),
+    x = ~cond,
+    y = ~Accuracy,
+    text = ~paste0(round(Accuracy * 100, 2), "%"),
+    hjust = -0.2,
+    textfont = list(color = c("#000000"), size = 18),
+    legendgroup = "average",
+    name = "Average - Study",
+    showlegend = FALSE
+  ) %>%
+  style(textposition = "top right") %>%
+  layout(
+    margin = list(t = 75),
+    title = list(text = "Final Test Accuracy", font = list(family = "Open Sans", size = 24, color = "#333")),
+    xaxis = list(
+      title = "Item Type",
+      autotypenumbers = "strict",
+      range = c(0.5, 2.5),
+      ticktext = list("Study", "Error"),
+      tickvals = list(1, 2),
+      tickmode = "array",
+      showgrid = FALSE,
+      tickfont = list(family = "Open Sans", size = 16, color = "#555"),
+      titlefont = list(family = "Open Sans", size = 20, color = "#555")
+    ),
+    yaxis = list(
+      title = "Accuracy",
+      titlefont = list(family = "Open Sans", size = 20, color = "#555"),
+      tickfont = list(family = "Open Sans", size = 16, color = "#555")
+    ),
+    legend = list(traceorder = 'reversed', font = list(family = "Open Sans", size = 16, color = "#555")),
+    titlefont = list(family = "Open Sans", size = 24, color = "#333"),
+    hovermode = "closest",
+    paper_bgcolor = '#f5f5f5',  # Light gray paper background
+    plot_bgcolor = '#ffffff'   # White plot background
+  )
+
+p1  # Print the plot
+
+```
+
+```{r}
+library(htmlwidgets)
+# Assuming p1 is your Plotly plot object
+htmlwidgets::saveWidget(p1, file = "summary.html")
+
+
+```
