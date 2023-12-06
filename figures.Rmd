@@ -59,16 +59,13 @@ Pse_data <- cleandata_agg_pred %>%
   summarize(
     accuracy_se = std.error(Accuracy)
   )
-```
 
-```{r}
 Ose_data <- Ose_data %>% mutate(type = 'Observed')
 Pse_data <- Pse_data %>% mutate(type = 'Predicted')
 se_data <- full_join(Ose_data, Pse_data)
 
 cleandata_summary_pred <- cleandata_summary_pred %>% full_join(se_data)
 ```
-
 
 ```{r warning=FALSE}
 p1 <- plot_ly(data = cleandata_agg_pred %>% filter(type=="Observed") %>% group_by(participant), x = ~cond, y = ~Accuracy, color = ~condition) %>%
@@ -218,7 +215,7 @@ p1  # Print the plot
 ```{r}
 library(htmlwidgets)
 # Assuming p1 is your Plotly plot object
-htmlwidgets::saveWidget(p1, file = "shiny_app/error_learning/www/summary.html")
+htmlwidgets::saveWidget(as_widget(p1), file = "shiny_app/error_learning/www/summary.html")
 
 
 ```

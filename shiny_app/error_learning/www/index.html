@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css"/>
   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css"/>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
@@ -204,35 +205,27 @@
     <!-- Interactive Figures Section -->
     <div id="section1" class="section">
       <h2>Interactive Figures</h2>
-      <div class="shiny-row">
-        <!-- Plotly Figure 1 -->
-        <div class="shiny-column">
-          <div id="savedPlotlyFigure1">
-            <iframe src="www/accuracy.html" width="100%" height="500px"></iframe>
+          <div class="container-fluid">
+        <!-- First Row: Three Columns -->
+        <div class="row">
+          <div class="col-md-4 slide-in" id="visual1">
+            <!-- Content for the first visual -->
+          </div>
+          <div class="col-md-4 slide-in" id="visual2">
+            <!-- Content for the second visual -->
+          </div>
+          <div class="col-md-4 slide-in" id="visual3">
+            <!-- Content for the third visual -->
           </div>
         </div>
-        <!-- Plotly Figure 2 -->
-        <div class="shiny-column">
-          <div id="plotlyFigure2" class="shiny-output">
-            <!-- Plotly figure 2 will be rendered here -->
+    
+        <!-- Second Row: One Large Column and a Column to the Right -->
+        <div class="row">
+          <div class="col-md-8 slide-in" id="largeVisual">
+            <!-- Content for the large visual -->
           </div>
-        </div>
-        <!-- Plotly Figure 3 -->
-        <div class="shiny-column">
-          <div id="plotlyFigure3" class="shiny-output">
-            <!-- Plotly figure 3 will be rendered here -->
-          </div>
-        </div>
-      </div>
-      <!-- Large Table -->
-      <div class="large-table">
-        <!-- Large table content goes here -->
-      </div>
-      <!-- Small Plotly Figure to the Right -->
-      <div class="shiny-row">
-        <div class="shiny-column">
-          <div id="smallPlotlyFigure" class="small-plotly">
-            <!-- Small Plotly figure will be rendered here -->
+          <div class="col-md-4 slide-in" id="visualRight">
+            <!-- Content for the visual to the right -->
           </div>
         </div>
       </div>
@@ -313,7 +306,39 @@
         }
       });
     });
-  </script>
+    
+    // Function to check if an element is in the viewport
+  function isInViewport(element) {
+    var rect = element.getBoundingClientRect();
+    return (
+      rect.top >= 0 &&
+      rect.left >= 0 &&
+      rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+      rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+    );
+  }
 
+    // Function to handle scroll events
+    function handleScroll() {
+      var visuals = document.querySelectorAll('.slide-in');
+  
+      visuals.forEach(function(visual) {
+        if (isInViewport(visual)) {
+          visual.classList.add('active');
+        }
+      });
+    }
+  
+    // Attach the scroll event listener
+    document.addEventListener('scroll', handleScroll);
+  </script>
+  
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <!-- Include Shiny app script -->
+  <script src="shiny_app.js"></script>
+  
 </body>
 </html>
