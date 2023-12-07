@@ -298,6 +298,13 @@
     </div>
   </div>
 
+  <!-- Add these script tags at the end of your HTML file -->
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/shinyjs@1.1.0"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
   <script>
     function scrollToSection(sectionId) {
       var section = document.getElementById(sectionId);
@@ -305,17 +312,18 @@
     }
 
     // Add this script at the end of your HTML file
-    $(document).ready(function(){
+    $(document).ready(function() {
+      // Initialize slick carousel
       $('.carousel').slick({
         dots: true,
         autoplay: true,
-        autoplaySpeed: 2000, // Set the time between slides in milliseconds
+        autoplaySpeed: 2000,
       });
-
+  
       // Add a scroll event listener to update the active state of nav links
       window.addEventListener('scroll', function() {
         var currentSection = null;
-
+  
         // Determine the currently visible section based on scroll position
         document.querySelectorAll('.section').forEach(function(section) {
           var rect = section.getBoundingClientRect();
@@ -323,16 +331,35 @@
             currentSection = section.id;
           }
         });
-
+  
         // Remove the 'active' class from all nav links
         document.querySelectorAll('.nav-link').forEach(function(link) {
           link.classList.remove('active');
         });
-
+  
         // Add the 'active' class to the nav link corresponding to the current section
         if (currentSection) {
           document.querySelector('.nav-link[data-target="' + currentSection + '"]').classList.add('active');
         }
+      });
+  
+      // Use shinyjs to define functions that can be called from Shiny
+      shinyjs.init();
+  
+      // Define a custom function to update the word pair
+      shinyjs.updateWordPair = function(wordPair) {
+        $("#wordPairContainer").text(wordPair);
+      };
+  
+      // Listen for the "Start Study Session" button click
+      $("#startStudy").click(function() {
+        console.log("Start Study Session button clicked!"); // Add this line for debugging
+        
+        // Replace the following line with your logic to get a random word pair
+        var randomWordPair = "Apple - Orange";
+  
+        // Call the shinyjs function to update the word pair
+        shinyjs.updateWordPair(randomWordPair);
       });
     });
 
@@ -394,6 +421,8 @@
     adjustTextSize('visual1');
     adjustTextSize('visual2');
     adjustTextSize('visual3');
+    
+    
   </script>
 
   <!-- Include Shiny app script -->

@@ -10,20 +10,19 @@
 library(shiny)
 
 fluidPage(
+  shinyjs::useShinyjs(),  # Initialize shinyjs
   includeHTML("www/index.html"),
-  navbarPage(
-    "Your Shiny App",
-    tabPanel("Tab 1",
-             fluidRow(
-               # Add your Shiny widgets and components here
-               # ...
-             )
+  titlePanel("Word Pair Study Phase"),
+  
+  sidebarLayout(
+    sidebarPanel(
+      actionButton("startStudy", "Start Study Session")
     ),
-    tabPanel("Tab 2",
-             fluidRow(
-               # Add more Shiny widgets and components here
-               # ...
-             )
+    
+    mainPanel(
+      div(id = "wordPairContainer", style = "font-size: 20px; text-align: center;"),
+      br(),
+      textOutput("timer")
     )
   )
 )

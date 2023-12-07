@@ -11,54 +11,39 @@ library(shiny)
 # Data manipulation and analysis
 library(dplyr)
 
+# Define word pairs and conditions
+word_pairs <- data.frame(
+  cue = c("PORTRAY", "PRESCRIPTION", "PARCEL", "CANYON", "LATIN", "STERN", "DRACULA", "ROBIN", "WELL", "INTRODUCE",
+          "GLIDE", "ORDER", "COURAGEOUS", "HONEYMOON", "LAUNDRY", "MEASUREMENT", "DANCER", "FUGITIVE", "CHIMNEY", "EYES",
+          "CRUNCH", "EMPIRE", "SAIL", "TEA", "SIDE", "DIAMETER", "CHUNK", "SAFARI", "ELEVATOR", "SWING",
+          "TASTY", "NITROGEN", "MODEL", "FILTHY", "CRITIC", "HUT", "FREEWAY", "ASSISTANCE", "SALES", "ANCESTOR",
+          "BISCUIT", "LIE", "BLOCKADE", "HOTEL", "USURP", "NOODLES", "EVICT", "COOKOUT", "UNCOMMON", "NATURE",
+          "THEOREM", "VISIT", "ANNUAL", "SINK", "STAR", "GRADUATE", "SOUTH", "VALLEY", "BATTERY", "ENERGY"),
+  target = c("SHOW", "PILL", "BOX", "MOUNTAIN", "FRENCH", "BOAT", "SCARY", "RED", "DONE", "PRESENT",
+             "HANG", "FORM", "LION", "ROMANCE", "SOAP", "HEIGHT", "MUSIC", "RUN", "BRICK", "COLOR",
+             "NOISE", "STATE", "OCEAN", "LEAVES", "ORDER", "LENGTH", "BLOCK", "DESERT", "BUILDING", "TREE",
+             "TREAT", "CHEMISTRY", "CAR", "DIRT", "ANALYZE", "ISLAND", "ROAD", "HELPER", "CLOTHES", "FAMILY", 
+             "COOKIE", "STEAL", "WALL", "BED", "TAKE", "CHICKEN", "APARTMENT", "HAMBURGER", "UNIQUE", "FOREST",
+             "GEOMETRY", "LEAVE", "PICNIC", "HOLE", "NIGHT", "CAP", "WEST", "LOW", "RADIO", "SUN"),
+  condition = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2)
+)
+
+# Shuffle the word pairs
+word_pairs <- word_pairs[sample(nrow(word_pairs)), ]
 
 # Define server logic required to draw a histogram
-function(input, output) {
-  cleandata <- read.csv("../../behavioral_data/fig_data.csv")
- 
-  output$plotlyOutput <- renderUI({
-    p1 <- plot_ly(data = cleandata_agg_pred %>% filter(type=="Observed") %>% group_by(participant), x = ~cond, y = ~Accuracy, color = ~condition) %>%
-      add_markers(alpha = 0.75, color = I("#D9D6C7"), split = ~participant, marker = list(size=5),
-                  text = ~Accuracy,
-                  textposition = "auto",
-                  hoverinfo = "text",
-                  hovertext = ~paste0("Participant: ", participant,
-                                      "<br> Observed Accuracy: ", round(Accuracy*100, 2), "%"),
-                  legendgroup="participants", name=~paste("Participant -", participant)) %>% 
-      add_lines(color = I("#D9D6C7"), line = list(width = 0.3), split = ~participant,
-                legendgroup="participants", name=~paste("Participant -", participant),
-                showlegend=FALSE) %>%
-      add_markers(data = cleandata_summary_pred %>% filter(type =="Observed") %>%  filter(condition=="error"), x = ~cond, y = ~Accuracy, error_y = list(type= "data", array = ~accuracy_se,color = '#e74c3c', thickness=2), type = "scatter", mode = "markers", marker = list(color = "#e74c3c", size = 12), legendgroup="average",
-                  name="Average - Error") %>% 
-      add_markers(data = cleandata_summary_pred %>% filter(type =="Observed") %>%  filter(condition=="study"), x = ~cond, y = ~Accuracy, error_y = list(type= "data", array = ~accuracy_se,color = '#2ecc71', thickness=2), type = "scatter", mode = "markers", marker = list(color = "#2ecc71", size = 12), legendgroup="average",
-                  name="Average - Study") %>% 
-      add_text(data = cleandata_summary_pred %>% filter(condition == "error" & type =="Observed"), x = ~cond, y = ~Accuracy, text = ~paste0(round(Accuracy * 100, 2), "%"), hjust = -0.5, textfont=list(color = c("#000000"), size=18), legendgroup="average",
-               name="Average - Error", showlegend=FALSE) %>%
-      add_text(data = cleandata_summary_pred %>% filter(condition == "study" & type =="Observed"), x = ~cond, y = ~Accuracy, text = ~paste0(round(Accuracy * 100, 2), "%"), hjust = -0.2, textfont=list(color = c("#000000"), size=18), legendgroup="average",
-               name="Average - Study", showlegend=FALSE) %>%
-      style(textposition = "top right") %>%
-      layout(
-        title = list(text= "Final Test Performance", size = 18),
-        xaxis = list(title = "Condition", autotypenumbers = "strict", range = c(0.5, 2.5), ticktext = list("Study Items", "Error Items"), 
-                     tickvals = list(1, 2),
-                     tickmode = "array"),
-        yaxis = list(title = "Accuracy"),
-        legend = list(traceorder='reversed'),
-        showlegend = FALSE,
-        hovermode = "closest"
-      ) 
-      # Add JavaScript code to adjust text size dynamically
-      p1$dependencies <- list(
-        "d3.js",
-        htmltools::htmlDependency(
-          "custom-plotly-scripts",
-          "1.0",
-          src = normalizePath(system.file("custom_scripts", package = "shiny")),
-          script = "resize_text.js"
-        )
-      )
-      
-      p1
-    })
-  
+function(input, output, session) {
+  observeEvent(input$startStudy, {
+    # Initialize shinyjs to ensure that shinyjs functions are available
+    shinyjs::useShinyjs()
+    
+    # Generate a random word pair (replace this with your logic)
+    cue <- sample(c("Word1", "Word2", "Word3"), 1)
+    target <- sample(c("Definition1", "Definition2", "Definition3"), 1)
+    
+    # Update the UI with the random word pair
+    shinyjs::runjs(sprintf("shinyjs.showStudy('%s', '%s')", cue, target))
+  })
 }
