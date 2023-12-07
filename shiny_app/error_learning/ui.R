@@ -20,9 +20,10 @@ fluidPage(
     ),
     
     mainPanel(
-      div(id = "wordPairContainer", style = "font-size: 20px; text-align: center;"),
-      br(),
-      textOutput("timer")
+      mainPanel(
+        div(id = "cueContainer", style = "font-size: 20px; text-align: center;"),
+        div(id = "targetContainer", style = "font-size: 20px; text-align: center;")
     )
   )
+)
 )

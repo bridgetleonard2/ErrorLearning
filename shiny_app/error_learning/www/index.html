@@ -294,7 +294,6 @@
 
     <div id="section4" class="section">
       <h2>Try It Yourself!</h2>
-      <!-- Your HTML content for Section 4 -->
     </div>
   </div>
 
@@ -343,23 +342,45 @@
         }
       });
   
-      // Use shinyjs to define functions that can be called from Shiny
+      // Initialize shinyjs to ensure that shinyjs functions are available
       shinyjs.init();
   
       // Define a custom function to update the word pair
-      shinyjs.updateWordPair = function(wordPair) {
-        $("#wordPairContainer").text(wordPair);
+      shinyjs.updateWordPair = function(cue, target, condition) {
+          // Clear previous content
+          $("#cueContainer").empty();
+          $("#targetContainer").empty();
+  
+        if (condition === 1) {
+          $("#cueContainer").text(cue);
+          // Create and append a text input element
+          var textBox = $("<input>").attr({
+            type: "text",
+            id: "textBoxInput",
+            placeholder: "Type your response..."
+          });
+          $("#targetContainer").append(textBox);
+          
+          // Define a function to send the value back to Shiny
+          var sendValueToShiny = function() {
+            var responseValue = $("#textBoxInput").val();
+            Shiny.onInputChange("textBoxResponse", responseValue);
+          };
+      
+          // Attach the sendValueToShiny function to the text input change event
+          textBox.on("input", sendValueToShiny);
+        } else if (condition === 2) {
+          $("#cueContainer").text(cue);
+          $("#targetContainer").text(target);
+        }
       };
   
       // Listen for the "Start Study Session" button click
       $("#startStudy").click(function() {
         console.log("Start Study Session button clicked!"); // Add this line for debugging
-        
-        // Replace the following line with your logic to get a random word pair
-        var randomWordPair = "Apple - Orange";
   
         // Call the shinyjs function to update the word pair
-        shinyjs.updateWordPair(randomWordPair);
+        shinyjs.updateWordPair("Cue", "Target", "Condition"); // Replace with your logic to get a random word pair
       });
     });
 
