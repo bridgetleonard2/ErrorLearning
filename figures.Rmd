@@ -65,6 +65,8 @@ Pse_data <- Pse_data %>% mutate(type = 'Predicted')
 se_data <- full_join(Ose_data, Pse_data)
 
 cleandata_summary_pred <- cleandata_summary_pred %>% full_join(se_data)
+
+write.csv(cleandata_agg_pred, "behavioral_data/fig_data.csv")
 ```
 
 ```{r warning=FALSE}
@@ -74,26 +76,26 @@ p1 <- plot_ly(data = cleandata_agg_pred %>% filter(type=="Observed") %>% group_b
               textposition = "auto",
               hoverinfo = "text",
               hovertext = ~paste0("Participant: ", participant,
-                                "<br> Observed Accuracy: ", round(Accuracy*100, 2), "%"),
-              legendgroup="participants", name=~paste("Participant -", participant)) %>% 
+                                "<br> Observed Accuracy: ", round(Accuracy*100, 2), "%")) %>% 
   add_lines(color = I("#D9D6C7"), line = list(width = 0.3), split = ~participant,
-            legendgroup="participants", name=~paste("Participant -", participant),
             showlegend=FALSE) %>%
   add_markers(data = cleandata_summary_pred %>% filter(type =="Observed") %>%  filter(condition=="error"), x = ~cond, y = ~Accuracy, error_y = list(type= "data", array = ~accuracy_se,color = '#e74c3c', thickness=2), type = "scatter", mode = "markers", marker = list(color = "#e74c3c", size = 12), legendgroup="average",
               name="Average - Error") %>% 
   add_markers(data = cleandata_summary_pred %>% filter(type =="Observed") %>%  filter(condition=="study"), x = ~cond, y = ~Accuracy, error_y = list(type= "data", array = ~accuracy_se,color = '#2ecc71', thickness=2), type = "scatter", mode = "markers", marker = list(color = "#2ecc71", size = 12), legendgroup="average",
               name="Average - Study") %>% 
-  add_text(data = cleandata_summary_pred %>% filter(condition == "error" & type =="Observed"), x = ~cond, y = ~Accuracy, text = ~paste0(round(Accuracy * 100, 2), "%"), hjust = -0.5, textfont=list(color = c("#000000"), size=18), legendgroup="average",
+  add_text(data = cleandata_summary_pred %>% filter(condition == "error" & type =="Observed"), x = ~cond, y = ~Accuracy, text = ~paste0(round(Accuracy * 100, 2), "%"), hjust = -0.5, textfont=list(color = c("#000000"), size = 17), legendgroup="average",
               name="Average - Error", showlegend=FALSE) %>%
-  add_text(data = cleandata_summary_pred %>% filter(condition == "study" & type =="Observed"), x = ~cond, y = ~Accuracy, text = ~paste0(round(Accuracy * 100, 2), "%"), hjust = -0.2, textfont=list(color = c("#000000"), size=18), legendgroup="average",
+  add_text(data = cleandata_summary_pred %>% filter(condition == "study" & type =="Observed"), x = ~cond, y = ~Accuracy, text = ~paste0(round(Accuracy * 100, 2), "%"), hjust = -0.2, textfont=list(color = c("#000000"), size = 17), legendgroup="average",
               name="Average - Study", showlegend=FALSE) %>%
   style(textposition = "top right") %>%
   layout(
-    title = list(text= "Final Test Performance", size = 18),
+    title = list(text= "Performance Overview", size = "3vmin"),
     xaxis = list(title = "Condition", autotypenumbers = "strict", range = c(0.5, 2.5), ticktext = list("Study Items", "Error Items"), 
       tickvals = list(1, 2),
-      tickmode = "array"),
-    yaxis = list(title = "Accuracy"),
+      tickmode = "array",
+      titlefont = list(size = "2.5vmin")),
+    yaxis = list(title = "Accuracy",
+                 titlefont = list(size = "2.5vmin")),
     legend = list(traceorder='reversed'),
     showlegend = FALSE,
     hovermode = "closest"
@@ -101,116 +103,7 @@ p1 <- plot_ly(data = cleandata_agg_pred %>% filter(type=="Observed") %>% group_b
 p1
 ```
 
-```{r}
-library(plotly)
-library(dplyr)
 
-# Your existing data and code
-
-# Updated Plotly code
-p1 <- plot_ly(
-  data = cleandata_agg_pred %>% filter(type == "Observed") %>% group_by(participant),
-  x = ~cond,
-  y = ~Accuracy,
-  color = ~condition
-) %>%
-  add_markers(
-    alpha = 0.75,
-    color = I("#D9D6C7"),  # Blue color
-    split = ~participant,
-    marker = list(size = 8, line = list(color = 'white', width = 0.5)),
-    text = ~paste0(round(Accuracy * 100, 2), "%"),
-    hoverinfo = "text",
-    hovertext = ~paste0(
-      "Participant: ",
-      participant,
-      "<br> Observed Accuracy: ",
-      round(Accuracy * 100, 2),
-      "%"
-    ),
-    showlegend = FALSE
-  ) %>%
-  add_lines(
-    color = I("#D9D6C7"),
-    line = list(width = 1),
-    split = ~participant,
-    showlegend = FALSE
-  ) %>%
-  add_markers(
-    data = cleandata_summary_pred %>% filter(type == "Observed") %>% filter(condition == "error"),
-    x = ~cond,
-    y = ~Accuracy,
-    error_y = list(type = "data", array = ~accuracy_se, color = '#e74c3c', thickness = 2),
-    type = "scatter",
-    mode = "markers",
-    marker = list(color = "#e74c3c", size = 12),
-    legendgroup = "average",
-    name = "Average - Error"
-  ) %>%
-  add_markers(
-    data = cleandata_summary_pred %>% filter(type == "Observed") %>% filter(condition == "study"),
-    x = ~cond,
-    y = ~Accuracy,
-    error_y = list(type = "data", array = ~accuracy_se, color = '#2ecc71', thickness = 2),
-    type = "scatter",
-    mode = "markers",
-    marker = list(color = "#2ecc71", size = 12),
-    legendgroup = "average",
-    name = "Average - Study",
-    showlegend = FALSE
-  ) %>%
-  add_text(
-    data = cleandata_summary_pred %>% filter(condition == "error" & type == "Observed"),
-    x = ~cond,
-    y = ~Accuracy,
-    text = ~paste0(round(Accuracy * 100, 2), "%"),
-    hjust = -0.5,
-    textfont = list(color = c("#000000"), size = 18),
-    legendgroup = "average",
-    name = "Average - Error",
-    showlegend = FALSE
-  ) %>%
-  add_text(
-    data = cleandata_summary_pred %>% filter(condition == "study" & type == "Observed"),
-    x = ~cond,
-    y = ~Accuracy,
-    text = ~paste0(round(Accuracy * 100, 2), "%"),
-    hjust = -0.2,
-    textfont = list(color = c("#000000"), size = 18),
-    legendgroup = "average",
-    name = "Average - Study",
-    showlegend = FALSE
-  ) %>%
-  style(textposition = "top right") %>%
-  layout(
-    margin = list(t = 75),
-    title = list(text = "Final Test Performance", font = list(family = "Open Sans", size = 24, color = "#333")),
-    xaxis = list(
-      title = "Item Type",
-      autotypenumbers = "strict",
-      range = c(0.5, 2.5),
-      ticktext = list("Study", "Error"),
-      tickvals = list(1, 2),
-      tickmode = "array",
-      showgrid = FALSE,
-      tickfont = list(family = "Open Sans", size = 16, color = "#555"),
-      titlefont = list(family = "Open Sans", size = 20, color = "#555")
-    ),
-    yaxis = list(
-      title = "Accuracy",
-      titlefont = list(family = "Open Sans", size = 20, color = "#555"),
-      tickfont = list(family = "Open Sans", size = 16, color = "#555")
-    ),
-    legend = list(traceorder = 'reversed', font = list(family = "Open Sans", size = 16, color = "#555")),
-    titlefont = list(family = "Open Sans", size = 24, color = "#333"),
-    hovermode = "closest",
-    paper_bgcolor = '#f5f5f5',  # Light gray paper background
-    plot_bgcolor = '#ffffff'   # White plot background
-  )
-
-p1  # Print the plot
-
-```
 
 ```{r}
 library(htmlwidgets)
@@ -249,9 +142,9 @@ pie1 <- plot_ly(
   marker = list(colors = colors, line = list(color = '#FFFFFF', width = 1))
 ) %>%
 layout(
-  title = list(text="Better performance on Study vs Error",size=18),
+  title = list(text="Best Performance",size=18),
   showlegend = FALSE,
-  font = list(size = 16, color = "#000000")
+  font = list(size = "4vmin", color = "#000000")
 )
 
 # Print the chart
@@ -281,6 +174,7 @@ pie2 <- plot_ly(
   labels = ~best.model,
   values = ~count,
   type = 'pie',
+  rotation = 150,
   textinfo = "label+percent",
   hoverinfo = "text+value",
   hole = 0.6,
@@ -289,11 +183,55 @@ pie2 <- plot_ly(
 layout(
   title = list(text="Type of Learner",size=18),
   showlegend = FALSE,
-  font = list(size = 16, color = "#000000")
+  font = list(size = "4vmin", color = "#000000")
 )
 
 # Print the chart
 pie2
 
-htmlwidgets::saveWidget(pie1, file = "shiny_app/error_learning/www/learner.html")
+htmlwidgets::saveWidget(pie2, file = "shiny_app/error_learning/www/learner.html")
+```
+
+```{r}
+library(DT)
+library(formattable)
+# Create datatable
+clean_ll <- lldata %>% 
+  dplyr::select(Participant, elab.LL, med.LL, diff.LL, best.model) %>% 
+  rename('Elaborative Score' = 'elab.LL', 'Mediator Score' = 'med.LL',
+         'Score Difference' = 'diff.LL', 'Model' = 'best.model')
+
+med_elab_formatter <-
+  formatter("span",
+            style = x ~ style(
+              font.weight = "bold",
+              color = ifelse(x == 'Mediator', "#9b59b6", ifelse(x == 'Elaborative', "#f39c12", "white"))
+            ))
+
+datatable_ll <- formattable(clean_ll,
+            list(
+              'Score Difference' = color_tile("#f7c46c", "#b984cc"),
+              'Model' = med_elab_formatter
+            )) %>% 
+  as.datatable(options = list(
+    initComplete = JS(
+    "function(settings, json) {",
+    "$('body').css({'font-family': 'Calibri'});",
+    "}"
+  ),
+  paging = TRUE,    ## paginate the output
+                 pageLength = 15,  ## number of rows to output for each page
+                 scrollX = TRUE,   ## enable scrolling on X axis
+                 scrollY = TRUE,   ## enable scrolling on Y axis
+                 autoWidth = TRUE, ## use smart column width handling
+                 server = FALSE,   ## use client-side processing
+                 dom = 'Bfrtip',
+                 buttons = c('csv', 'excel')),
+  extensions = 'Buttons',
+  selection = 'single', ## enable selection of a single row
+  filter = 'bottom',              ## include column filters at the bottom
+  rownames = FALSE                ## don't show row numbers/names
+  )
+
+htmlwidgets::saveWidget(datatable_ll, file = "shiny_app/error_learning/www/dt.html")
 ```
