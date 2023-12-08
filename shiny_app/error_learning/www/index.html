@@ -361,12 +361,7 @@
           });
           $("#targetContainer").append(textBox);
           
-          // start study trial after 5 seconds
-          setTimeout(function() {
-            $("#targetContainer").empty();
-            $("#targetContainer").text(target);
-    
-            $("#myTextbox").keypress(function(event) {
+          $("#textBoxInput").keypress(function(event) {
               // Check if the pressed key is Enter (keyCode 13)
               if (event.which === 13) {
                 // Do something when Enter key is pressed
@@ -374,9 +369,15 @@
                 // Add additional code here, such as submitting the form or triggering an action
                 var responseValue = $("#textBoxInput").val();
     
-                Shiny.onInputChange("textBoxResponse", responseValue);
+                Shiny.setInputValue("textBoxResponse", responseValue);
+                console.log(responseValue);
               }
-            });
+          })
+              
+          // start study trial after 5 seconds
+          setTimeout(function() {
+            $("#targetContainer").empty();
+            $("#targetContainer").text(target);
           }, 5000);
 
         } else if (condition === 2) {

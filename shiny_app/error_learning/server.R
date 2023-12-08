@@ -73,12 +73,16 @@ function(input, output, session) {
       # Update the UI with the random word pair
       shinyjs::runjs(sprintf("shinyjs.updateWordPair('%s', '%s', %d)", cue, target, condition))
       
-      start_time <- Sys.time()
-      while (difftime(Sys.time(), start_time, units = "secs") < 10) {
-          if (!is.null(input$textBoxResponse)) {
-            print(input$textBoxResponse)
-          }
+      timer <- reactiveTimer(10000)
+      
+      observe({
+        timer()
+        response <- isolate(input$textBoxResponse)
+        if (!is.null(response)) {
+          responses <<- c(responses, response)
+          print(response)
         }
+      })
 
       }
     })
