@@ -233,5 +233,14 @@ datatable_ll <- formattable(clean_ll,
   rownames = FALSE                ## don't show row numbers/names
   )
 
-htmlwidgets::saveWidget(datatable_ll, file = "shiny_app/error_learning/www/dt.html")
+title <- tags$caption(
+  style = "caption-side: top; font-size: 18px; font-weight: bold; margin-bottom: 10px;",
+  "My Formattable Datatable"
+)
+
+# Combine the title and the datatable using htmltools::tagList
+datatable_ll <- tagList(title, datatable_ll)
+
+#htmlwidgets::saveWidget(datatable_ll, file = "shiny_app/error_learning/www/dt.html")
+datatable_ll
 ```

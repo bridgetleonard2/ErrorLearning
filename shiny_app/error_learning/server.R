@@ -66,17 +66,6 @@ function(input, output, session) {
     word_pairs <- word_pairs[sample(nrow(word_pairs)), ]
     responses <- list()
     
-    # Observe for capturing "Enter" key press
-    observe({
-      shinyjs::runjs("
-        $('#myTextbox').keypress(function(event) {
-          if (event.which === 13) {  // 13 corresponds to the 'Enter' key
-            Shiny.onInputChange('myTextboxValue', $('#myTextbox').val());
-          }
-        });
-      ")
-        })
-    
     for (index in seq_len(nrow(word_pairs))) {
       cue = word_pairs[index, 1]
       target = word_pairs[index, 2]
@@ -84,7 +73,13 @@ function(input, output, session) {
       # Update the UI with the random word pair
       shinyjs::runjs(sprintf("shinyjs.updateWordPair('%s', '%s', %d)", cue, target, condition))
       
-    }
-    
-  })
+      start_time <- Sys.time()
+      while (difftime(Sys.time(), start_time, units = "secs") < 10) {
+          if (!is.null(input$textBoxResponse)) {
+            print(input$textBoxResponse)
+          }
+        }
+
+      }
+    })
 }

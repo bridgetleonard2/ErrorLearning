@@ -361,27 +361,40 @@
           });
           $("#targetContainer").append(textBox);
           
-          // Define a function to send the value back to Shiny
-          var sendValueToShiny = function() {
-            var responseValue = $("#textBoxInput").val();
-            Shiny.onInputChange("textBoxResponse", responseValue);
-          };
-      
-          // Attach the sendValueToShiny function to the text input change event
-          textBox.on("input", sendValueToShiny);
+          // start study trial after 5 seconds
+          setTimeout(function() {
+            $("#targetContainer").empty();
+            $("#targetContainer").text(target);
+    
+            $("#myTextbox").keypress(function(event) {
+              // Check if the pressed key is Enter (keyCode 13)
+              if (event.which === 13) {
+                // Do something when Enter key is pressed
+                console.log("Enter key pressed!");
+                // Add additional code here, such as submitting the form or triggering an action
+                var responseValue = $("#textBoxInput").val();
+    
+                Shiny.onInputChange("textBoxResponse", responseValue);
+              }
+            });
+          }, 5000);
+
         } else if (condition === 2) {
           $("#cueContainer").text(cue);
           $("#targetContainer").text(target);
         }
       };
-  
+    
       // Listen for the "Start Study Session" button click
       $("#startStudy").click(function() {
         console.log("Start Study Session button clicked!"); // Add this line for debugging
-  
+    
         // Call the shinyjs function to update the word pair
         shinyjs.updateWordPair("Cue", "Target", "Condition"); // Replace with your logic to get a random word pair
-      });
+    
+        // Disable the button to prevent further clicks
+        shinyjs.disable("startStudy");
+        });
     });
 
     // Function to handle scroll events
