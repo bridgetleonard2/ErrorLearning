@@ -31,14 +31,6 @@ word_pairs <- data.frame(
 )
 
 
-# Function to update UI with a word pair
-showWordPair <- function(cue, target) {
-  shinyjs::runjs(sprintf("shinyjs.showStudy('%s', '%s')", cue, target))
-}
-
-# Shuffle the word pairs
-word_pairs <- word_pairs[sample(nrow(word_pairs)), ]
-
 # Define server logic required to draw a histogram
 function(input, output, session) {
   observeEvent(input$startStudy, {
@@ -66,24 +58,33 @@ function(input, output, session) {
     word_pairs <- word_pairs[sample(nrow(word_pairs)), ]
     responses <- list()
     
-    for (index in seq_len(nrow(word_pairs))) {
-      cue = word_pairs[index, 1]
-      target = word_pairs[index, 2]
-      condition = word_pairs[index, 3]
-      # Update the UI with the random word pair
-      shinyjs::runjs(sprintf("shinyjs.updateWordPair('%s', '%s', %d)", cue, target, condition))
-      
-      timer <- reactiveTimer(10000)
-      
-      observe({
-        timer()
-        response <- isolate(input$textBoxResponse)
-        if (!is.null(response)) {
-          responses <<- c(responses, response)
-          print(response)
-        }
-      })
-
+    values <- reactiveValues(index = 1, study_active = TRUE)
+    
+    # Observe for capturing textbox response
+    observe({
+      response <- input$textBoxResponse
+      if (!is.null(response)) {
+        print(response)
+        # Do something with the response if needed
       }
+    })
+    
+    # Observe to increment the index every 10 seconds
+    observeEvent(invalidateLater(10000, session), {
+      values$index <- values$index + 1
+      
+      # Check if the index exceeds the number of rows
+      if (values$index <= nrow(word_pairs)) {
+        # Get the current word pair and update the UI
+        cue = word_pairs[values$index, 1]
+        target = word_pairs[values$index, 2]
+        condition = word_pairs[values$index, 3]
+        shinyjs::runjs(sprintf("shinyjs.updateWordPair('%s', '%s', %d)", cue, target, condition))
+      } else {
+        # All word pairs displayed, end the study
+        values$study_active <- FALSE
+        print("End of study")
+      }
+    })
     })
 }
