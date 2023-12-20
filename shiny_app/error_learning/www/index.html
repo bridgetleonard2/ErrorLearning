@@ -326,8 +326,8 @@
       // Initialize shinyjs to ensure that shinyjs functions are available
       shinyjs.init();
   
-            // Create an array to store responses
-      var responsesArray = [];
+      // Create an object to store responses
+      var responsesObject = {};
     
       // Define a custom function to update the word pair
       shinyjs.updateWordPair = function(cue, target, condition) {
@@ -335,8 +335,12 @@
         $("#cueContainer").empty();
         $("#targetContainer").empty();
     
+        var startTime; // Variable to store the start time
+    
         if (condition === 1) {
           $("#cueContainer").text(cue);
+          startTime = new Date(); // Record the start time
+    
           // Create and append a text input element
           var textBox = $("<input>").attr({
             type: "text",
@@ -349,12 +353,13 @@
             // Check if the pressed key is Enter (keyCode 13)
             if (event.which === 13) {
               var responseValue = $("#textBoxInput").val();
+              var responseTime = new Date() - startTime; // Calculate elapsed time
               console.log(responseValue);
               
-              // Add the response to the array
-              responsesArray.push(responseValue);
-              console.log(responsesArray)
-    
+              // Add the response and response time to the object
+              responsesObject[cue] = [responseValue, responseTime];
+              console.log(responsesObject)
+              
               // Clear the input field
               $("#textBoxInput").val("");
             }
@@ -384,7 +389,7 @@
     
       // Add a function to send the responses to Shiny
       shinyjs.sendResponsesToShiny = function() {
-        Shiny.setInputValue("responsesArray", responsesArray);
+        Shiny.setInputValue("responsesObject", responsesObject);
       };
     });
 

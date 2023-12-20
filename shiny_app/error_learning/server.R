@@ -32,6 +32,7 @@ word_pairs <- data.frame(
 
 
 # Define server logic required to draw a histogram
+# Define server logic required to draw a histogram
 function(input, output, session) {
   # Initialize shinyjs to ensure that shinyjs functions are available
   shinyjs::useShinyjs()
@@ -58,7 +59,6 @@ function(input, output, session) {
   
   responses <- reactiveValues(values = list())
   
-  
   observeEvent(input$startStudy, {
     for (i in seq_len(nrow(word_pairs))) {
       cue <- word_pairs$cue[i]
@@ -67,21 +67,32 @@ function(input, output, session) {
       shinyjs::runjs(sprintf("shinyjs.updateWordPair('%s', '%s', %d)", cue, target, condition))
       
       start_time <- Sys.time()
-
       
       while (difftime(Sys.time(), start_time, units = "secs") < 10){}
     }
+    
     print('Experiment Complete')
+    
     # Call the JavaScript function to send responses to Shiny
     shinyjs::runjs("shinyjs.sendResponsesToShiny();")
     # Start the process
     # run_pair()  # This will start with the first pair
   })
   
-  observeEvent(input$responsesArray, {
-    # Do something with the received responsesArray
-    responses$values <- input$responsesArray
+  observeEvent(input$responsesObject, {
+    # Do something with the received responsesObject
+    responses$values <- input$responsesObject
     print(responses$values)
+    
+    # Example: Extracting cues and responses
+    cues <- names(responses$values)
+    responses_list <- lapply(responses$values, function(x) x[1])
+    response_times_list <- lapply(responses$values, function(x) x[2])
+    
+    print(cues)
+    print(responses_list)
+    print(response_times_list)
+    
     # You can process or analyze the responses here
   })
 }
