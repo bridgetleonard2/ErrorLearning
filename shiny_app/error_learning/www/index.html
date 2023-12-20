@@ -326,12 +326,15 @@
       // Initialize shinyjs to ensure that shinyjs functions are available
       shinyjs.init();
   
+            // Create an array to store responses
+      var responsesArray = [];
+    
       // Define a custom function to update the word pair
       shinyjs.updateWordPair = function(cue, target, condition) {
-          // Clear previous content
-          $("#cueContainer").empty();
-          $("#targetContainer").empty();
-  
+        // Clear previous content
+        $("#cueContainer").empty();
+        $("#targetContainer").empty();
+    
         if (condition === 1) {
           $("#cueContainer").text(cue);
           // Create and append a text input element
@@ -341,26 +344,27 @@
             placeholder: "Type your response..."
           });
           $("#targetContainer").append(textBox);
-          
-          $("#textBoxInput").keypress(function(event) {
-              // Check if the pressed key is Enter (keyCode 13)
-              if (event.which === 13) {
-                // Do something when Enter key is pressed
-                console.log("Enter key pressed!");
-                // Add additional code here, such as submitting the form or triggering an action
-                var responseValue = $("#textBoxInput").val();
     
-                Shiny.setInputValue("textBoxResponse", responseValue);
-                console.log(responseValue);
-              }
-          })
+          $("#textBoxInput").keypress(function(event) {
+            // Check if the pressed key is Enter (keyCode 13)
+            if (event.which === 13) {
+              var responseValue = $("#textBoxInput").val();
+              console.log(responseValue);
               
+              // Add the response to the array
+              responsesArray.push(responseValue);
+              console.log(responsesArray)
+    
+              // Clear the input field
+              $("#textBoxInput").val("");
+            }
+          });
+    
           // start study trial after 5 seconds
           setTimeout(function() {
             $("#targetContainer").empty();
             $("#targetContainer").text(target);
           }, 5000);
-
         } else if (condition === 2) {
           $("#cueContainer").text(cue);
           $("#targetContainer").text(target);
@@ -369,14 +373,19 @@
     
       // Listen for the "Start Study Session" button click
       $("#startStudy").click(function() {
-        console.log("Start Study Session button clicked!"); // Add this line for debugging
+        console.log("Start Study Session button clicked!");
     
         // Call the shinyjs function to update the word pair
-        shinyjs.updateWordPair("Cue", "Target", "Condition"); // Replace with your logic to get a random word pair
+        shinyjs.updateWordPair("Cue", "Target", "Condition");
     
         // Disable the button to prevent further clicks
         shinyjs.disable("startStudy");
-        });
+      });
+    
+      // Add a function to send the responses to Shiny
+      shinyjs.sendResponsesToShiny = function() {
+        Shiny.setInputValue("responsesArray", responsesArray);
+      };
     });
 
     // Function to handle scroll events
