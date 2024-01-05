@@ -25,5 +25,20 @@ fluidPage(
         div(id = "targetContainer", style = "font-size: 20px; text-align: center;")
     )
   )
-)
+  ),
+  div(style = "margin-top: 20px; margin-bottom: 20px; color: #3498db; font-size: 20px; text-align: center;",
+      textOutput("timer")
+      ),
+  sidebarLayout(
+    sidebarPanel(
+      actionButton("startTest", "Start Test Session")
+    ),
+    
+    mainPanel(
+      mainPanel(
+        div(id = "cueTestContainer", style = "font-size: 20px; text-align: center;"),
+        div(id = "answerTestContainer", style = "font-size: 20px; text-align: center;")
+      )
+    )
+  )
 )

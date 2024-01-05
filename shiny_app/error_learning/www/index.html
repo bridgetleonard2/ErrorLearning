@@ -290,8 +290,7 @@
       <p><br></p>
       <p>The trials will switch randomly between studying and generating a response until you have completed all 60 pairs,
       about 10 minutes.</p>
-      <p>After finishing the learning phase, a 5-minute timer will appear on the screen before you are prompted to take
-      your final test. This is known as the distractor phase so do whatever you'd like for these 5-minutes!</p>
+      <p>After finishing the learning phase, a 5-minute timer will appear on the screen. Please wait for this timer to be over before you take your final test by clicking the "start test session" button. This is known as the distractor phase so do whatever you'd like for these 5-minutes!</p>
       <p>Once the 5 minutes is over, you'll see a button to start the final test. The test will consists of all 60
       word pairs. You will see the cue on the screen with a textbox below where you can enter your answer. It is important to remember
       to <strong>answer with the correct target word,</strong> not the one you first generated in response to the cue.</p>
@@ -417,7 +416,26 @@
         Shiny.setInputValue("responsesObject", responsesObject);
       };
     });
-
+    
+    function startTimer(duration) {
+        var timer = duration, minutes, seconds;
+        var interval = setInterval(function () {
+            minutes = parseInt(timer / 60, 10);
+            seconds = parseInt(timer % 60, 10);
+    
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+    
+            $('#timer').text(minutes + ':' + seconds);
+    
+            if (--timer < 0) {
+                clearInterval(interval);
+                $('#timer').text('');
+                // Optional: Trigger any action after timer ends
+            }
+        }, 1000);
+    }
+    window.startTimer = startTimer; // Make it globally accessible
     // Function to handle scroll events
     function handleScroll() {
       var visuals = document.querySelectorAll('.slide-in');

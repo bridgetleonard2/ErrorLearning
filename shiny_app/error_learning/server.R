@@ -93,6 +93,9 @@ function(input, output, session) {
     print(responses_list)
     print(response_times_list)
     
+    # Clear last word pair and start timer
+    shinyjs::runjs(sprintf("shinyjs.updateWordPair('%s', '%s', %d)", "", "", 2))
+    shinyjs::runjs("startTimer(300);")
     # You can process or analyze the responses here
   })
 }
