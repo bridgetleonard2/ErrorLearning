@@ -352,6 +352,7 @@
   
       // Create an object to store responses
       var responsesObject = {};
+      var answerObject = {};
     
       // Define a custom function to update the word pair
       shinyjs.updateWordPair = function(cue, target, condition) {
@@ -399,7 +400,44 @@
           $("#targetContainer").text(target);
         }
       };
+      
+      // Define a custom function to update the word pair
+      shinyjs.updateTest = function(cue, target) {
+        // Clear previous content
+        $("#cueTestContainer").empty();
+        $("#answerTestContainer").empty();
     
+        var startTime; // Variable to store the start time
+    
+        $("#cueTestContainer").text(cue);
+        startTime = new Date(); // Record the start time
+    
+        // Create and append a text input element
+        var textBox = $("<input>").attr({
+          type: "text",
+          id: "answerInput",
+          placeholder: "Type your response..."
+          });
+        $("#answerTestContainer").append(textBox);
+    
+        $("#answerInput").keypress(function(event) {
+          // Check if the pressed key is Enter (keyCode 13)
+          if (event.which === 13) {
+            var answerValue = $("#answerInput").val();
+            var answerTime = new Date() - startTime; // Calculate elapsed time
+            console.log(answerValue);
+            
+            // Add the response and response time to the object
+            answerObject[cue] = [answerValue, answerTime];
+            console.log(answerObject)
+            
+            // Clear the input field
+            $("#answerInput").val("");
+            // Tell shiny to run the next word
+            Shiny.setInputValue("enterKey", JSON.stringify({cue: cue, response: answerValue, time: answerTime}));
+          }
+        });
+      };
       // Listen for the "Start Study Session" button click
       $("#startStudy").click(function() {
         console.log("Start Study Session button clicked!");
@@ -414,6 +452,11 @@
       // Add a function to send the responses to Shiny
       shinyjs.sendResponsesToShiny = function() {
         Shiny.setInputValue("responsesObject", responsesObject);
+      };
+      
+      // Add a function to send the responses to Shiny
+      shinyjs.sendAnswersToShiny = function() {
+        Shiny.setInputValue("answerObject", answerObject);
       };
     });
     

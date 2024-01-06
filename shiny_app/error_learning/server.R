@@ -58,6 +58,7 @@ function(input, output, session) {
   word_pairs <- word_pairs[sample(nrow(word_pairs)), ]
   
   responses <- reactiveValues(values = list())
+  answers <- reactiveValues(values = list())
   
   observeEvent(input$startStudy, {
     for (i in seq_len(nrow(word_pairs))) {
@@ -78,7 +79,7 @@ function(input, output, session) {
     # Start the process
     # run_pair()  # This will start with the first pair
   })
-  
+
   observeEvent(input$responsesObject, {
     # Do something with the received responsesObject
     responses$values <- input$responsesObject
@@ -96,6 +97,54 @@ function(input, output, session) {
     # Clear last word pair and start timer
     shinyjs::runjs(sprintf("shinyjs.updateWordPair('%s', '%s', %d)", "", "", 2))
     shinyjs::runjs("startTimer(300);")
+    # You can process or analyze the responses here
+  })
+  
+  # Now test session
+  current_index <- reactiveVal(1)
+  
+  #Event to start the test
+  observeEvent(input$startTest, {
+    current_index(1)  # Initialize to the first word pair
+    if (nrow(word_pairs) > 0) {
+      cue <- word_pairs$cue[1]
+      target <- word_pairs$target[1]
+      shinyjs::runjs(sprintf("shinyjs.updateTest('%s', '%s')", cue, target))
+    }
+  })
+  
+  # Event to listen for the Enter key press
+  observeEvent(input$enterKey, {
+    index <- current_index()
+    
+    if (index < nrow(word_pairs)) {
+      current_index(index + 1)  # Increment the index first
+      cue <- word_pairs$cue[current_index()]
+      target <- word_pairs$target[current_index()]
+      shinyjs::runjs(sprintf("shinyjs.updateTest('%s', '%s')", cue, target))
+    } else {
+      # Call the JavaScript function to send responses to Shiny
+      shinyjs::runjs("shinyjs.sendAnswersToShiny();")
+    }
+  })
+  
+  
+  observeEvent(input$answerObject, {
+    # Do something with the received responsesObject
+    answers$values <- input$answerObject
+    print(answers$values)
+    
+    # Example: Extracting cues and responses
+    cues_test <- names(answers$values)
+    answers_list <- lapply(answers$values, function(x) x[1])
+    answers_times_list <- lapply(answers$values, function(x) x[2])
+    
+    print(cues_test)
+    print(answers_list)
+    print(answers_times_list)
+    
+    # Clear last word pair and start timer
+    shinyjs::runjs(sprintf("shinyjs.updateTest('%s', '%s')", "", ""))
     # You can process or analyze the responses here
   })
 }
