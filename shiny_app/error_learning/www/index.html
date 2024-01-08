@@ -272,7 +272,7 @@
     <div id="section3" class="section">
       <h2>Try It Yourself!</h2>
       <!-- Your HTML content for Section 3 -->
-      <p style='font-size:30px'>Task Instructions</p>
+      <p style='font-size:20px'>Task Instructions</p>
       <p>In this task, you will learn and be tested on 60 sets of word pairs.</p>
       <p>You will begin with a learning phase where you will learn each word pair in
       one of two different ways.</p>
@@ -372,7 +372,10 @@
             id: "textBoxInput",
             placeholder: "Type your response..."
           });
+          
           $("#targetContainer").append(textBox);
+          // Automatically focus the textbox
+          textBox.focus();
     
           $("#textBoxInput").keypress(function(event) {
             // Check if the pressed key is Enter (keyCode 13)
@@ -418,7 +421,10 @@
           id: "answerInput",
           placeholder: "Type your response..."
           });
+        
         $("#answerTestContainer").append(textBox);
+        // Automatically focus the textbox
+        textBox.focus();
     
         $("#answerInput").keypress(function(event) {
           // Check if the pressed key is Enter (keyCode 13)
@@ -448,7 +454,25 @@
         // Disable the button to prevent further clicks
         shinyjs.disable("startStudy");
       });
+      
+      // Listen for the "Start Study Session" button click
+      $("#startStudy").click(function() {
+        console.log("Start Study Session button clicked!");
     
+        // Call the shinyjs function to update the word pair
+        shinyjs.updateWordPair("Cue", "Target", "Condition");
+    
+        // Disable the button to prevent further clicks
+        shinyjs.disable("startStudy");
+      });
+      
+      // Listen for the "Start Study Session" button click
+      $("#startTest").click(function() {
+        console.log("Start Study Session button clicked!");
+    
+        // Disable the button to prevent further clicks
+        shinyjs.disable("startTest");
+      });
       // Add a function to send the responses to Shiny
       shinyjs.sendResponsesToShiny = function() {
         Shiny.setInputValue("responsesObject", responsesObject);
