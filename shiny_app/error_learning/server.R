@@ -39,46 +39,13 @@ function(input, output, session) {
   
   # Shuffle the word pairs
   word_pairs <- word_pairs[sample(nrow(word_pairs)), ]
+  word_pairs <- head(word_pairs, 10)
   
   responses <- reactiveValues(values = list())
   answers <- reactiveValues(values = list())
   
   responses_data <- reactiveVal(data.frame(cue = character(0), target = character(0), condition = integer(0), study_response = character(0), study_rt = integer(0)))
   answers_data <- reactiveVal(data.frame(cue = character(0), target = character(0), condition = integer(0), test_response = character(0), test_rt = integer(0)))
-  
-  # Function to analyze combined data
-  analyzeData <- function() {
-    print("analyzing data")
-    if (nrow(answers_data) == nrow(word_pairs)) {
-      print("full data to analyze")
-      combined_data <- merge(responses_data, answers_data, by = c("cue", "target", "condition"), all = TRUE)
-      # Perform your analysis here...
-      print(combined_data)
-    }
-    # Start cleaning data:
-    # 1) A guess becomes NA if: a) it is the same as the cue, b) it is repeated for >3 items, c) it has >3 characters
-    
-    # 2) Miss <10 guesses -- includes misses that were calculated as NA in step 1
-    ## - This is where a participant may be excluded and prompted to try again
-    
-    # 3) Remove items with correct guess
-    ## - use stringdist to check typos
-    
-    # Get results
-    # print("Participant XXXX's Results")
-    # Calculate accuracy: output: "you performed x% better on ___ items than ___"
-    ## use stringdist to check typos and case
-    
-    # 4) remove items with rt < 200 and rt > 15000
-    # Analyze RT: output: "you responded x% faster on ___ items compared to ___"
-    
-    # Run MLE to find learner type: output: "you fit the ___ model x% better than the ___ model"
-    
-    
-    ## Final output -- use your participant code above to see how your results compare to other in the
-    # interactive figures above!
-    
-  }
   
   observeEvent(input$startStudy, {
     for (i in seq_len(nrow(word_pairs))) {
@@ -183,6 +150,70 @@ function(input, output, session) {
     combined_data <- merge(responses_current, answers_current, by = c("cue", "target", "condition"), all = TRUE)
     # Perform your analysis here...
     print(combined_data)
+    print("Begin Cleaning")
+    # Start cleaning data:
+    # add index column for easy cleaning (identify "bad" indices):
+    combined_data <- combined_data %>% mutate(index = row_number())
+    
+    # 1) A guess becomes NA if: a) it is repeated for >3 items, b) it has >3 characters
+    
+    na_response_a <- combined_data %>% 
+      filter(condition == 1) %>% 
+      group_by(study_response) %>% 
+      add_count() %>%
+      filter(n > 3) %>% 
+      select(index)
+    
+    na_response_b <- combined_data %>%
+      filter(condition == 1) %>% 
+      filter(nchar(study_response) < 3) %>% 
+      select(index)
+  
+    # Remove these from data
+    filtered_data <- combined_data %>%
+      filter(index != na_response_a, index != na_response_b)
+      
+    # 2) Miss <10 guesses -- includes misses that were calculated as NA in step 1
+    ## - This is where a participant may be excluded and prompted to try again
+    if (nrow(filtered_data) < (nrow(word_pairs) - 10)) {
+      print("Not enough data due to...")
+    } else {
+      # 3) Remove items with correct guess
+    ## - use stringdist to check typos
+      correct_guess <- filtered_data %>% 
+        filter(condition == 1) %>% 
+        filter(stringdist(tolower(study_response), tolower(target), method = "lv") < 3) %>% 
+        select(index)
+      
+      clean_data <- filtered_data %>% 
+        filter(index != correct_guess)
+      
+      # Get results
+      # print("Participant XXXX's Results")
+      # Calculate accuracy: output: "you performed x% better on ___ items than ___"
+      ## use stringdist to check typos and case
+      clean_data <- clean_data %>% 
+        mutate(correct = case_when(stringdist(tolower(test_response), tolower(target), method = "lv") < 3 ~ 1,
+                                   stringdist(tolower(test_response), tolower(target), method = "lv") >= ~ 1))
+      
+      print(clean_data)
+      accuracy <- clean_data %>% 
+        group_by(condition) %>% 
+        summarize(
+          accuracy = sum(correct) / nrow(clean_data())
+        )
+      print(accuracy)
+    }
+    
+    
+    # 4) remove items with rt < 200 and rt > 15000
+    # Analyze RT: output: "you responded x% faster on ___ items compared to ___"
+    
+    # Run MLE to find learner type: output: "you fit the ___ model x% better than the ___ model"
+    
+    
+    ## Final output -- use your participant code above to see how your results compare to other in the
+    # interactive figures above!
   })
   
 }
