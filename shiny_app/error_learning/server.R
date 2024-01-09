@@ -43,8 +43,42 @@ function(input, output, session) {
   responses <- reactiveValues(values = list())
   answers <- reactiveValues(values = list())
   
-  responses_data <- data.frame(cue = character(0), target = character(0), condition = integer(0), study_response = character(0), study_rt = integer(0))
-  answers_data <- data.frame(cue = character(0), target = character(0), condition = integer(0), test_response = character(0), test_rt = integer(0))
+  responses_data <- reactiveVal(data.frame(cue = character(0), target = character(0), condition = integer(0), study_response = character(0), study_rt = integer(0)))
+  answers_data <- reactiveVal(data.frame(cue = character(0), target = character(0), condition = integer(0), test_response = character(0), test_rt = integer(0)))
+  
+  # Function to analyze combined data
+  analyzeData <- function() {
+    print("analyzing data")
+    if (nrow(answers_data) == nrow(word_pairs)) {
+      print("full data to analyze")
+      combined_data <- merge(responses_data, answers_data, by = c("cue", "target", "condition"), all = TRUE)
+      # Perform your analysis here...
+      print(combined_data)
+    }
+    # Start cleaning data:
+    # 1) A guess becomes NA if: a) it is the same as the cue, b) it is repeated for >3 items, c) it has >3 characters
+    
+    # 2) Miss <10 guesses -- includes misses that were calculated as NA in step 1
+    ## - This is where a participant may be excluded and prompted to try again
+    
+    # 3) Remove items with correct guess
+    ## - use stringdist to check typos
+    
+    # Get results
+    # print("Participant XXXX's Results")
+    # Calculate accuracy: output: "you performed x% better on ___ items than ___"
+    ## use stringdist to check typos and case
+    
+    # 4) remove items with rt < 200 and rt > 15000
+    # Analyze RT: output: "you responded x% faster on ___ items compared to ___"
+    
+    # Run MLE to find learner type: output: "you fit the ___ model x% better than the ___ model"
+    
+    
+    ## Final output -- use your participant code above to see how your results compare to other in the
+    # interactive figures above!
+    
+  }
   
   observeEvent(input$startStudy, {
     for (i in seq_len(nrow(word_pairs))) {
@@ -70,17 +104,20 @@ function(input, output, session) {
     # Do something with the received responsesObject
     responses$values <- input$responsesObject
     
+    # Get current value of responses_data
+    responses_current <- responses_data()
     n <- length(names(input$responsesObject))
-    responses_data <- responses_data[1:n,]
+    responses_current <- responses_current[1:n,]
     # Example: Extracting cues and responses
-    responses_data$cue <- names(input$responsesObject)
-    responses_data$target <- sapply(input$responsesObject, function(x) x[1])
-    responses_data$condition <- sapply(input$responsesObject, function(x) x[2])
-    responses_data$study_response <- sapply(input$responsesObject, function(x) x[3])
-    responses_data$study_rt <- sapply(input$responsesObject, function(x) x[4])
-    rownames(responses_data) <- NULL
+    responses_current$cue <- names(input$responsesObject)
+    responses_current$target <- sapply(input$responsesObject, function(x) x[1])
+    responses_current$condition <- sapply(input$responsesObject, function(x) x[2])
+    responses_current$study_response <- sapply(input$responsesObject, function(x) x[3])
+    responses_current$study_rt <- sapply(input$responsesObject, function(x) x[4])
+    rownames(responses_current) <- NULL
     
-    print(responses_data)
+    print(responses_current)
+    responses_data(responses_current)
     # Clear last word pair and start timer
     shinyjs::runjs(sprintf("shinyjs.updateWordPair('%s', '%s', %d)", "", "", 2))
     shinyjs::runjs("startTimer(300);")
@@ -92,8 +129,6 @@ function(input, output, session) {
   
   #Event to start the test
   observeEvent(input$startTest, {
-    # Shuffle the word pairs
-    word_pairs <- word_pairs[sample(nrow(word_pairs)), ]
     
     current_index(1)  # Initialize to the first word pair
     if (nrow(word_pairs) > 0) {
@@ -107,10 +142,9 @@ function(input, output, session) {
   # Event to listen for the Enter key press
   observeEvent(input$enterKey, {
     index <- current_index()
-    print(index)
     
     if (index < nrow(word_pairs)) {
-      # current_index(index + 1)  # Increment the index first
+      current_index(index + 1)  # Increment the index first
       cue <- word_pairs$cue[current_index()]
       target <- word_pairs$target[current_index()]
       condition <- word_pairs$condition[current_index()]
@@ -129,51 +163,26 @@ function(input, output, session) {
     # Do something with the received responsesObject
     answers$values <- input$answerObject
     
+    # Get current value of answers_data
+    answers_current <- answers_data()
+    
     n <- length(names(input$answerObject))
-    answers_data <- answers_data[1:n,]
+    answers_current <- answers_current[1:n,]
     
-    answers_data$cue <- names(input$answerObject)
-    answers_data$target <- sapply(input$answerObject, function(x) x[1])
-    answers_data$condition <- sapply(input$answerObject, function(x) x[2])
-    answers_data$test_response <- sapply(input$answerObject, function(x) x[3])
-    answers_data$test_rt <- sapply(input$answerObject, function(x) x[4])
-    rownames(answers_data) <- NULL
+    answers_current$cue <- names(input$answerObject)
+    answers_current$target <- sapply(input$answerObject, function(x) x[1])
+    answers_current$condition <- sapply(input$answerObject, function(x) x[2])
+    answers_current$test_response <- sapply(input$answerObject, function(x) x[3])
+    answers_current$test_rt <- sapply(input$answerObject, function(x) x[4])
+    rownames(answers_current) <- NULL
     
-    print(answers_data)
-    # Clear last word pair and start timer
-    # shinyjs::runjs(sprintf("shinyjs.updateTest('%s', '%s', %d)", "", "", 2))
+    print(answers_current)
+    
+    responses_current <- responses_data()
     # You can process or analyze the responses here
+    combined_data <- merge(responses_current, answers_current, by = c("cue", "target", "condition"), all = TRUE)
+    # Perform your analysis here...
+    print(combined_data)
   })
   
-  # Function to analyze combined data
-  analyzeData <- function() {
-    if (nrow(answers_data) == nrow(word_pairs)) {
-      combined_data <- merge(responses_data, answers_data, by = c("cue", "target", "condition"), all = TRUE)
-      # Perform your analysis here...
-      print(combined_data)
-    }
-    # Start cleaning data:
-    # 1) A guess becomes NA if: a) it is the same as the cue, b) it is repeated for >3 items, c) it has >3 characters
-    
-    # 2) Miss <10 guesses -- includes misses that were calculated as NA in step 1
-    ## - This is where a participant may be excluded and prompted to try again
-    
-    # 3) Remove items with correct guess
-    ## - use stringdist to check typos
-    
-    # Get results
-    # print("Participant XXXX's Results")
-    # Calculate accuracy: output: "you performed x% better on ___ items than ___"
-    ## use stringdist to check typos and case
-    
-    # 4) remove items with RT > 
-    # Analyze RT: output: "you responded x% faster on ___ items compared to ___"
-    
-    # Run MLE to find learner type: output: "you fit the ___ model x% better than the ___ model"
-    
-    
-    ## Final output -- use your participant code above to see how your results compare to other in the
-    # interactive figures above!
-    
-  }
 }
