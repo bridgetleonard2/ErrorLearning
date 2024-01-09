@@ -388,7 +388,7 @@
               console.log(responseValue);
               
               // Add the response and response time to the object
-              responsesObject[cue] = [target, responseValue, responseTime];
+              responsesObject[cue] = [target, condition, responseValue, responseTime];
               console.log(responsesObject)
               
               // Clear the input field
@@ -412,7 +412,7 @@
       };
       
       // Define a custom function to update the word pair
-      shinyjs.updateTest = function(cue, target) {
+      shinyjs.updateTest = function(cue, target, condition) {
         // Clear previous content
         $("#cueTestContainer").empty();
         $("#answerTestContainer").empty();
@@ -441,7 +441,7 @@
             console.log(answerValue);
             
             // Add the response and response time to the object
-            answerObject[cue] = [answerValue, answerTime];
+            answerObject[cue] = [target, condition, answerValue, answerTime];
             console.log(answerObject)
             
             // Clear the input field

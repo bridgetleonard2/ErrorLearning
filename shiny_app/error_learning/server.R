@@ -41,8 +41,8 @@ function(input, output, session) {
   responses <- reactiveValues(values = list())
   answers <- reactiveValues(values = list())
   
-  responses_data <- data.frame(cue = character(0), target = character(0), study_response = character(0), study_rt = integer(0))
-  answers_data <- data.frame(cue = character(0), target = character(0), test_response = character(0), test_rt = integer(0))
+  responses_data <- data.frame(cue = character(0), target = character(0), condition = integer(0), study_response = character(0), study_rt = integer(0))
+  answers_data <- data.frame(cue = character(0), target = character(0), condition = integer(0), test_response = character(0), test_rt = integer(0))
   
   observeEvent(input$startStudy, {
     for (i in seq_len(nrow(word_pairs))) {
@@ -73,8 +73,9 @@ function(input, output, session) {
     # Example: Extracting cues and responses
     responses_data$cue <- names(input$responsesObject)
     responses_data$target <- sapply(input$responsesObject, function(x) x[1])
-    responses_data$study_response <- sapply(input$responsesObject, function(x) x[2])
-    responses_data$study_rt <- sapply(input$responsesObject, function(x) x[3])
+    responses_data$condition <- sapply(input$responsesObject, function(x) x[2])
+    responses_data$study_response <- sapply(input$responsesObject, function(x) x[3])
+    responses_data$study_rt <- sapply(input$responsesObject, function(x) x[4])
     rownames(responses_data) <- NULL
     
     print(responses_data)
@@ -89,11 +90,14 @@ function(input, output, session) {
   
   #Event to start the test
   observeEvent(input$startTest, {
+    # Shuffle the word pairs
+    word_pairs <- word_pairs[sample(nrow(word_pairs)), ]
+    
     current_index(1)  # Initialize to the first word pair
     if (nrow(word_pairs) > 0) {
       cue <- word_pairs$cue[1]
       target <- word_pairs$target[1]
-      shinyjs::runjs(sprintf("shinyjs.updateTest('%s', '%s')", cue, target))
+      shinyjs::runjs(sprintf("shinyjs.updateTest('%s', '%s', %d)", cue, target, condition))
     }
   })
   
@@ -105,7 +109,7 @@ function(input, output, session) {
       current_index(index + 1)  # Increment the index first
       cue <- word_pairs$cue[current_index()]
       target <- word_pairs$target[current_index()]
-      shinyjs::runjs(sprintf("shinyjs.updateTest('%s', '%s')", cue, target))
+      shinyjs::runjs(sprintf("shinyjs.updateTest('%s', '%s', %d)", cue, target, condition))
     } else {
       # Call the JavaScript function to send responses to Shiny
       shinyjs::runjs("shinyjs.sendAnswersToShiny();")
@@ -124,20 +128,21 @@ function(input, output, session) {
     
     answers_data$cue <- names(input$answerObject)
     answers_data$target <- sapply(input$answerObject, function(x) x[1])
-    answers_data$test_response <- sapply(input$answerObject, function(x) x[2])
-    answers_data$test_rt <- sapply(input$answerObject, function(x) x[3])
+    answers_data$condition <- sapply(input$answerObject, function(x) x[2])
+    answers_data$test_response <- sapply(input$answerObject, function(x) x[3])
+    answers_data$test_rt <- sapply(input$answerObject, function(x) x[4])
     rownames(answers_data) <- NULL
     
     print(answers_data)
     # Clear last word pair and start timer
-    shinyjs::runjs(sprintf("shinyjs.updateTest('%s', '%s')", "", ""))
+    # shinyjs::runjs(sprintf("shinyjs.updateTest('%s', '%s', %d)", "", "", 2))
     # You can process or analyze the responses here
   })
   
   # Function to analyze combined data
   analyzeData <- function() {
     if (nrow(answers_data) == nrow(word_pairs)) {
-      combined_data <- merge(responses_data, answers_data, by = c("cue", "target"), all = TRUE)
+      combined_data <- merge(responses_data, answers_data, by = c("cue", "target", "condition"), all = TRUE)
       # Perform your analysis here...
       print(combined_data)
     }
