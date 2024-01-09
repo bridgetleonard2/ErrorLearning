@@ -10,6 +10,8 @@
 library(shiny)
 # Data manipulation and analysis
 library(dplyr)
+install.packages("stringdist")
+library(stringdist)
 
 
 # Define server logic required to draw a histogram
@@ -97,6 +99,7 @@ function(input, output, session) {
     if (nrow(word_pairs) > 0) {
       cue <- word_pairs$cue[1]
       target <- word_pairs$target[1]
+      condition <- word_pairs$condition[1]
       shinyjs::runjs(sprintf("shinyjs.updateTest('%s', '%s', %d)", cue, target, condition))
     }
   })
@@ -104,16 +107,19 @@ function(input, output, session) {
   # Event to listen for the Enter key press
   observeEvent(input$enterKey, {
     index <- current_index()
+    print(index)
     
     if (index < nrow(word_pairs)) {
-      current_index(index + 1)  # Increment the index first
+      # current_index(index + 1)  # Increment the index first
       cue <- word_pairs$cue[current_index()]
       target <- word_pairs$target[current_index()]
+      condition <- word_pairs$condition[current_index()]
       shinyjs::runjs(sprintf("shinyjs.updateTest('%s', '%s', %d)", cue, target, condition))
     } else {
       # Call the JavaScript function to send responses to Shiny
       shinyjs::runjs("shinyjs.sendAnswersToShiny();")
       # Clear the text box
+      shinyjs::runjs('$("#cueTestContainer").empty()')
       shinyjs::runjs('$("#answerTestContainer").empty()')
     }
   })
@@ -146,5 +152,28 @@ function(input, output, session) {
       # Perform your analysis here...
       print(combined_data)
     }
+    # Start cleaning data:
+    # 1) A guess becomes NA if: a) it is the same as the cue, b) it is repeated for >3 items, c) it has >3 characters
+    
+    # 2) Miss <10 guesses -- includes misses that were calculated as NA in step 1
+    ## - This is where a participant may be excluded and prompted to try again
+    
+    # 3) Remove items with correct guess
+    ## - use stringdist to check typos
+    
+    # Get results
+    # print("Participant XXXX's Results")
+    # Calculate accuracy: output: "you performed x% better on ___ items than ___"
+    ## use stringdist to check typos and case
+    
+    # 4) remove items with RT > 
+    # Analyze RT: output: "you responded x% faster on ___ items compared to ___"
+    
+    # Run MLE to find learner type: output: "you fit the ___ model x% better than the ___ model"
+    
+    
+    ## Final output -- use your participant code above to see how your results compare to other in the
+    # interactive figures above!
+    
   }
 }
