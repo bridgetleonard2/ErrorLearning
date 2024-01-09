@@ -349,7 +349,10 @@
   
       // Initialize shinyjs to ensure that shinyjs functions are available
       shinyjs.init();
-  
+      
+      // Disable test until study is completed
+      shinyjs.disable("startTest");
+      
       // Create an object to store responses
       var responsesObject = {};
       var answerObject = {};
@@ -390,6 +393,10 @@
               
               // Clear the input field
               $("#textBoxInput").val("");
+              
+              // Show the study pair
+              $("#targetContainer").empty();
+              $("#targetContainer").text(target);
             }
           });
     
@@ -499,6 +506,7 @@
                 clearInterval(interval);
                 $('#timer').text('');
                 // Optional: Trigger any action after timer ends
+                shinyjs.enable("startTest");
             }
         }, 1000);
     }

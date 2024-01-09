@@ -41,6 +41,9 @@ function(input, output, session) {
   responses <- reactiveValues(values = list())
   answers <- reactiveValues(values = list())
   
+  responses_data <- data.frame(cue = character(0), response = character(0), rt = integer(0))
+  answers_data <- data.frame(cue = character(0), response = character(0), rt = integer(0))
+  
   observeEvent(input$startStudy, {
     for (i in seq_len(nrow(word_pairs))) {
       cue <- word_pairs$cue[i]
@@ -65,15 +68,18 @@ function(input, output, session) {
     # Do something with the received responsesObject
     responses$values <- input$responsesObject
     
+    print(names(input$responsesObject))
+    print(sapply(input$responsesObject, function(x) x[1]))
+    print(sapply(input$responsesObject, function(x) x[2]))
+    
+    n <- length(names(input$responsesObject))
+    responses_data <- responses_data[1:n,]
     # Example: Extracting cues and responses
-    cues <- names(responses$values)
-    responses_list <- sapply(responses$values, function(x) x[1])
-    response_times_list <- sapply(responses$values, function(x) x[2])
+    responses_data$cue <- names(input$responsesObject)
+    responses_data$response <- sapply(input$responsesObject, function(x) x[1])
+    responses_data$rt <- sapply(input$responsesObject, function(x) x[2])
     
-    print(cues)
-    print(responses_list)
-    print(response_times_list)
-    
+    print(responses_data)
     # Clear last word pair and start timer
     shinyjs::runjs(sprintf("shinyjs.updateWordPair('%s', '%s', %d)", "", "", 2))
     shinyjs::runjs("startTimer(300);")
@@ -90,9 +96,6 @@ function(input, output, session) {
       cue <- word_pairs$cue[1]
       target <- word_pairs$target[1]
       shinyjs::runjs(sprintf("shinyjs.updateTest('%s', '%s')", cue, target))
-    } else {
-      # Clear the text box
-      shinyjs::runjs('$("#answerTestContainer").empty()')
     }
   })
   
@@ -108,6 +111,8 @@ function(input, output, session) {
     } else {
       # Call the JavaScript function to send responses to Shiny
       shinyjs::runjs("shinyjs.sendAnswersToShiny();")
+      # Clear the text box
+      shinyjs::runjs('$("#answerTestContainer").empty()')
     }
   })
   
@@ -116,17 +121,21 @@ function(input, output, session) {
     # Do something with the received responsesObject
     answers$values <- input$answerObject
     
-    # Example: Extracting cues and responses
-    cues_test <- names(answers$values)
-    answers_list <- sapply(answers$values, function(x) x[1])
-    answers_times_list <- sapply(answers$values, function(x) x[2])
-    
-    print(cues_test)
-    print(answers_list)
-    print(answers_times_list)
+    answers_data$cue <- names(input$answerObject)
+    answers_data$response <- sapply(input$answerObject, function(x) x[1])
+    answers_data$rt <- sapply(input$answerObject, function(x) x[2])
     
     # Clear last word pair and start timer
     shinyjs::runjs(sprintf("shinyjs.updateTest('%s', '%s')", "", ""))
     # You can process or analyze the responses here
   })
+  
+  # Function to analyze combined data
+  analyzeData <- function() {
+    if (nrow(answers_data) == nrow(word_pairs)) {
+      combined_data <- merge(responses_data, answers_data, by = "Cue", all = TRUE)
+      # Perform your analysis here...
+      print(combined_data)
+    }
+  }
 }
