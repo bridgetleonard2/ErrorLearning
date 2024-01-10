@@ -162,16 +162,23 @@ function(input, output, session) {
       group_by(study_response) %>% 
       add_count() %>%
       filter(n > 3) %>% 
-      select(index)
+      pull(index)
     
     na_response_b <- combined_data %>%
       filter(condition == 1) %>% 
       filter(nchar(study_response) < 3) %>% 
-      select(index)
-  
-    # Remove these from data
-    filtered_data <- combined_data %>%
-      filter(index != na_response_a, index != na_response_b)
+      pull(index)
+    
+    print(na_response_a)
+    print(na_response_b)
+    
+    if (na_response_a != 0 | na_response_b != 0) {
+      remove <- na_response_a + na_reponse_b
+      filtered_data <- combined_data %>%
+        filter(index != remove)
+    } else{
+      filtered_data <- combined_data 
+    }
       
     # 2) Miss <10 guesses -- includes misses that were calculated as NA in step 1
     ## - This is where a participant may be excluded and prompted to try again
