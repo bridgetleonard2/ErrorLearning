@@ -155,7 +155,7 @@ function(input, output, session) {
     # add index column for easy cleaning (identify "bad" indices):
     combined_data <- combined_data %>% mutate(index = row_number())
     
-    # 1) A guess becomes NA if: a) it is repeated for >3 items, b) it has >3 characters
+    # 1) A guess becomes NA if: a) it is repeated for >3 items, b) it has >3 characters c) it is the same as the cue
     
     na_response_a <- combined_data %>% 
       filter(condition == 1) %>% 
@@ -169,13 +169,16 @@ function(input, output, session) {
       filter(nchar(study_response) < 3) %>% 
       pull(index)
     
-    print(na_response_a)
-    print(na_response_b)
+    na_response_c <- combined_data %>%
+      filter(condition == 1) %>% 
+      filter(stringdist(tolower(study_response), tolower(cue), method = "lv") < 3) %>% 
+      pull(index)
     
-    if (na_response_a != 0 | na_response_b != 0) {
-      remove <- na_response_a + na_reponse_b
+    
+    if (length(na_response_a) != 0 | length(na_response_b) != 0 | length(na_response_c) != 0) {
+      remove <- c(na_response_a, na_response_b, na_response_c)
       filtered_data <- combined_data %>%
-        filter(index != remove)
+        filter(!index %in% remove)
     } else{
       filtered_data <- combined_data 
     }
@@ -190,10 +193,10 @@ function(input, output, session) {
       correct_guess <- filtered_data %>% 
         filter(condition == 1) %>% 
         filter(stringdist(tolower(study_response), tolower(target), method = "lv") < 3) %>% 
-        select(index)
+        pull(index)
       
       clean_data <- filtered_data %>% 
-        filter(index != correct_guess)
+        filter(!index %in% correct_guess)
       
       # Get results
       # print("Participant XXXX's Results")
