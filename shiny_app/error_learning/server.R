@@ -12,6 +12,7 @@ library(shiny)
 library(dplyr)
 install.packages("stringdist")
 library(stringdist)
+library(reticulate)
 
 
 # Define server logic required to draw a histogram
@@ -203,21 +204,55 @@ function(input, output, session) {
       # Calculate accuracy: output: "you performed x% better on ___ items than ___"
       ## use stringdist to check typos and case
       clean_data <- clean_data %>% 
-        mutate(correct = case_when(stringdist(tolower(test_response), tolower(target), method = "lv") < 3 ~ 1,
-                                   stringdist(tolower(test_response), tolower(target), method = "lv") >= ~ 1))
+        mutate(correct = case_when(
+          stringdist(tolower(test_response), tolower(target), method = "lv") < 3 ~ 1,
+          TRUE ~ 0  # Default case if the above condition is not met
+        ))
       
       print(clean_data)
       accuracy <- clean_data %>% 
         group_by(condition) %>% 
         summarize(
-          accuracy = sum(correct) / nrow(clean_data())
+          accuracy = sum(correct) / n()
         )
-      print(accuracy)
+      
+      error_acc <- accuracy %>% filter(condition == 1) %>% pull(accuracy)
+      study_acc <- accuracy %>% filter(condition == 2) %>% pull(accuracy)
+      if (error_acc > study_acc) {
+        print(paste0("You performed ", round((error_acc - study_acc)*100, digits=2), "% better on error items than study items"))
+      } else if (study_acc > error_acc) {
+        print(paste0("You performed ", round((study_acc - error_acc)*100, digits=2), "% better on study items than error items"))
+      } else if (study_acc == error_acc) {
+        print("You did just as well on error items as study items")
+      }
+      print(paste("Error accuracy:", round(error_acc*100, digits=2)))
+      print(paste("Study accuracy:", round(study_acc*100, digits=2)))
     }
     
     
-    # 4) remove items with rt < 200 and rt > 15000
+    # 4) filter for only correct & remove items with rt < 200 and rt > 15000
     # Analyze RT: output: "you responded x% faster on ___ items compared to ___"
+    clean_data_rt <- clean_data %>% 
+      filter(correct == 1, test_rt > 200, test_rt < 15000) %>% 
+      group_by(condition) %>% 
+      summarize(
+        avg_rt = mean(as.numeric(test_rt))
+      )
+    
+    error_rt <- clean_data_rt %>% filter(condition == 1) %>% pull(avg_rt)
+    study_rt <- clean_data_rt %>% filter(condition == 2) %>% pull(avg_rt)
+    
+    if (error_rt > study_rt) {
+      print(paste0("You responsded ", (round(((error_rt - study_rt)/error_rt)*100, digits=2)), "% faster on study items than error items"))
+    } else if (study_rt > error_rt) {
+      print(paste0("You responded ", (round(((study_rt - error_rt)/study_rt)*100, digits=2)), "% faster on error items than study items"))
+    } else if (study_rt == error_rt) {
+      print("You responded just as fast on error items as study items")
+    }
+    
+    print(paste("Error response time:", error_rt))
+    print(paste("Study response time:", study_rt))
+    
     
     # Run MLE to find learner type: output: "you fit the ___ model x% better than the ___ model"
     
