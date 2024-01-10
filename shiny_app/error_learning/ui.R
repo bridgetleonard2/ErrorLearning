@@ -12,7 +12,7 @@ library(shiny)
 fluidPage(
   shinyjs::useShinyjs(),  # Initialize shinyjs
   includeHTML("www/index.html"),
-  titlePanel("Word Pair Study Phase"),
+  titlePanel("The Task"),
   
   sidebarLayout(
     sidebarPanel(

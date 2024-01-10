@@ -10,7 +10,6 @@
 library(shiny)
 # Data manipulation and analysis
 library(dplyr)
-install.packages("stringdist")
 library(stringdist)
 library(reticulate)
 
@@ -147,6 +146,8 @@ function(input, output, session) {
     print(answers_current)
     
     responses_current <- responses_data()
+    
+    ### DATA ANALYSIS STARTS HERE 
     # You can process or analyze the responses here
     combined_data <- merge(responses_current, answers_current, by = c("cue", "target", "condition"), all = TRUE)
     # Perform your analysis here...
@@ -197,7 +198,9 @@ function(input, output, session) {
         pull(index)
       
       clean_data <- filtered_data %>% 
-        filter(!index %in% correct_guess)
+        filter(!index %in% correct_guess) %>% 
+        # lastly we want to filter out time outs and short responses
+        filter(test_rt > 200, test_rt < 15000)
       
       # Get results
       # print("Participant XXXX's Results")
@@ -219,11 +222,14 @@ function(input, output, session) {
       error_acc <- accuracy %>% filter(condition == 1) %>% pull(accuracy)
       study_acc <- accuracy %>% filter(condition == 2) %>% pull(accuracy)
       if (error_acc > study_acc) {
-        print(paste0("You performed ", round((error_acc - study_acc)*100, digits=2), "% better on error items than study items"))
+        accuracySummary <- paste0("You performed ", round((error_acc - study_acc)*100, digits=2), "% better on error items than study items")
+        # print(paste0("You performed ", round((error_acc - study_acc)*100, digits=2), "% better on error items than study items"))
       } else if (study_acc > error_acc) {
-        print(paste0("You performed ", round((study_acc - error_acc)*100, digits=2), "% better on study items than error items"))
+        accuracySummary <- paste0("You performed ", round((study_acc - error_acc)*100, digits=2), "% better on study items than error items")
+        # print(paste0("You performed ", round((study_acc - error_acc)*100, digits=2), "% better on study items than error items"))
       } else if (study_acc == error_acc) {
-        print("You did just as well on error items as study items")
+        accuracySummary <- "You did just as well on error items as study items"
+        # print("You did just as well on error items as study items")
       }
       print(paste("Error accuracy:", round(error_acc*100, digits=2)))
       print(paste("Study accuracy:", round(study_acc*100, digits=2)))
@@ -233,7 +239,7 @@ function(input, output, session) {
     # 4) filter for only correct & remove items with rt < 200 and rt > 15000
     # Analyze RT: output: "you responded x% faster on ___ items compared to ___"
     clean_data_rt <- clean_data %>% 
-      filter(correct == 1, test_rt > 200, test_rt < 15000) %>% 
+      filter(correct == 1) %>% 
       group_by(condition) %>% 
       summarize(
         avg_rt = mean(as.numeric(test_rt))
@@ -243,22 +249,34 @@ function(input, output, session) {
     study_rt <- clean_data_rt %>% filter(condition == 2) %>% pull(avg_rt)
     
     if (error_rt > study_rt) {
-      print(paste0("You responsded ", (round(((error_rt - study_rt)/error_rt)*100, digits=2)), "% faster on study items than error items"))
+      rtSummary <- paste0("You responded ", (round(((error_rt - study_rt)/error_rt)*100, digits=2)), "% faster on study items than error items")
+      # print(paste0("You responded ", (round(((error_rt - study_rt)/error_rt)*100, digits=2)), "% faster on study items than error items"))
     } else if (study_rt > error_rt) {
-      print(paste0("You responded ", (round(((study_rt - error_rt)/study_rt)*100, digits=2)), "% faster on error items than study items"))
+      rtSummary <- paste0("You responded ", (round(((study_rt - error_rt)/study_rt)*100, digits=2)), "% faster on error items than study items")
+      # print(paste0("You responded ", (round(((study_rt - error_rt)/study_rt)*100, digits=2)), "% faster on error items than study items"))
     } else if (study_rt == error_rt) {
-      print("You responded just as fast on error items as study items")
+      rtSummary <- "You responded just as fast on error items as study items"
+      # print("You responded just as fast on error items as study items")
     }
     
     print(paste("Error response time:", error_rt))
     print(paste("Study response time:", study_rt))
     
+    shinyjs::runjs(sprintf("shinyjs.showResults('%s', '%s')", accuracySummary, rtSummary))
     
     # Run MLE to find learner type: output: "you fit the ___ model x% better than the ___ model"
     
     
     ## Final output -- use your participant code above to see how your results compare to other in the
     # interactive figures above!
+    
+    # Load in data (load in earlier to get participant ID)
+    
+    # Append new results
+    
+    # Update figures
+    
+    # Save data
   })
   
 }
