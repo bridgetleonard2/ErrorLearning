@@ -13,9 +13,59 @@ library(lme4)
 ```
 
 ```{r}
-cleandata <- read.csv("behavioral_data/clean_data.csv")
+cleandata <- read.csv("shiny_app/error_learning/www/formatted_data.csv")
+
 ```
 
+```{r}
+cleandata_participant <- cleandata %>% 
+  group_by(participant, condition) %>% 
+  summarize(
+    performance = (sum(correct) / n())
+  )
+
+cleandata_summary <- cleandata_participant %>% 
+  group_by(condition) %>% 
+  summarize(
+    mean_performance = mean(performance),
+    sd_performance = sd(performance),
+    n = n(),
+    stError = sd_performance / sqrt(n)
+  )
+```
+```{r warning=FALSE}
+p1 <- plot_ly(data = cleandata_participant, x = ~condition, y = ~performance) %>%
+  add_markers(alpha = 0.75, color = I("#D9D6C7"), split = ~participant, marker = list(size=5),
+              text = ~performance,
+              textposition = "auto",
+              hoverinfo = "text",
+              hovertext = ~paste0("Participant: ", participant,
+                                "<br> Observed Accuracy: ", round(performance*100, 2), "%"),
+              showlegend=FALSE) %>% 
+  add_lines(color = I("#D9D6C7"), line = list(width = 0.3), split = ~participant,
+            showlegend=FALSE) %>%
+  add_markers(data = cleandata_summary %>%  filter(condition== 1), x = ~condition, y = ~mean_performance, error_y = list(type= "data", array = ~stError,color = '#e74c3c', thickness=2), type = "scatter", mode = "markers", marker = list(color = "#e74c3c", size = 12), legendgroup="average",
+              name="Average - Error", showlegend=FALSE) %>% 
+  add_markers(data = cleandata_summary %>%  filter(condition==2), x = ~condition, y = ~mean_performance, error_y = list(type= "data", array = ~stError,color = '#2ecc71', thickness=2), type = "scatter", mode = "markers", marker = list(color = "#2ecc71", size = 12), legendgroup="average",
+              name="Average - Study", showlegend=FALSE) %>% 
+  add_text(data = cleandata_summary %>% filter(condition == 1), x = ~condition, y = ~mean_performance, text = ~paste0(round(mean_performance * 100, 2), "%"), hjust = -0.5, textfont=list(color = c("#000000"), size = 17), legendgroup="average",
+              name="Average - Error", showlegend=FALSE) %>%
+  add_text(data = cleandata_summary %>% filter(condition == 2), x = ~condition, y = ~mean_performance, text = ~paste0(round(mean_performance * 100, 2), "%"), hjust = -0.2, textfont=list(color = c("#000000"), size = 17), legendgroup="average",
+              name="Average - Study", showlegend=FALSE) %>%
+  style(textposition = "top right") %>%
+  layout(
+    title = list(text= "Performance Overview", size = "3vmin"),
+    xaxis = list(title = "Condition", autotypenumbers = "strict", range = c(0.5, 2.5), ticktext = list("Study Items", "Error Items"), 
+      tickvals = list(1, 2),
+      tickmode = "array",
+      titlefont = list(size = "2.5vmin")),
+    yaxis = list(title = "Accuracy",
+                 titlefont = list(size = "2.5vmin")),
+    showlegend = FALSE,
+    hovermode = "closest"
+  ) 
+p1
+```
 
 ```{r}
 # Mixed Linear Model
@@ -70,7 +120,7 @@ write.csv(cleandata_agg_pred, "behavioral_data/fig_data.csv")
 ```
 
 ```{r warning=FALSE}
-p1 <- plot_ly(data = cleandata_agg_pred %>% filter(type=="Observed") %>% group_by(participant), x = ~cond, y = ~Accuracy, color = ~condition) %>%
+p1 <- plot_ly(data = cleandata %>% group_by(participant), x = ~cond, y = ~Accuracy, color = ~condition, showscale = FALSE) %>%
   add_markers(alpha = 0.75, color = I("#D9D6C7"), split = ~participant, marker = list(size=5),
               text = ~Accuracy,
               textposition = "auto",

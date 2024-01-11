@@ -11,6 +11,8 @@ library(shiny)
 # Data manipulation and analysis
 library(dplyr)
 library(stringdist)
+library(ggplot2)
+library(gridExtra)
 library(reticulate)
 
 
@@ -147,7 +149,10 @@ function(input, output, session) {
     
     responses_current <- responses_data()
     
-    ### DATA ANALYSIS STARTS HERE 
+    ### DATA ANALYSIS STARTS HERE
+    full_data <- read.csv('www/formatted_data.csv')
+    ppt_code <- max(full_data$participant, na.rm = TRUE)
+    
     # You can process or analyze the responses here
     combined_data <- merge(responses_current, answers_current, by = c("cue", "target", "condition"), all = TRUE)
     # Perform your analysis here...
@@ -213,6 +218,19 @@ function(input, output, session) {
         ))
       
       print(clean_data)
+      str(clean_data)
+      clean_data$target <- unlist(clean_data$target)
+      clean_data$condition <- as.double(unlist(clean_data$condition))
+      # replace null with na
+      clean_data$study_response <- lapply(clean_data$study_response, function(x) if (is.null(x)) NA else x)
+      clean_data$study_response <- unlist(clean_data$study_response)
+      clean_data$study_rt <- lapply(clean_data$study_rt, function(x) if (is.null(x)) NA else x)
+      clean_data$study_rt <- unlist(clean_data$study_rt)
+      clean_data$test_response <- unlist(clean_data$test_response)
+      clean_data$test_rt <- (unlist(clean_data$test_rt))
+      
+      str(clean_data)
+      
       accuracy <- clean_data %>% 
         group_by(condition) %>% 
         summarize(
@@ -263,6 +281,24 @@ function(input, output, session) {
     print(paste("Study response time:", study_rt))
     
     shinyjs::runjs(sprintf("shinyjs.showResults('%s', '%s')", accuracySummary, rtSummary))
+    output$plotSummary <- renderPlot({
+      accuracy$condition <- as.factor(unlist(accuracy$condition))
+      clean_data_rt$condition <- as.factor(unlist(clean_data_rt$condition))
+      
+      print(head(accuracy))
+      print(head(clean_data_rt))
+      p1 <- ggplot(accuracy, aes(x = condition, y = accuracy)) +
+        geom_bar(stat = "identity") +
+        theme_minimal() +
+        ggtitle("Accuracy by Condition")
+      
+      p2 <- ggplot(clean_data_rt, aes(x = condition, y = avg_rt)) +
+        geom_bar(stat = "identity") +
+        theme_minimal() +
+        ggtitle("Response Time by Condition")
+      
+      grid.arrange(p1, p2, ncol = 2)
+    }, width = 800, height = 400)
     
     # Run MLE to find learner type: output: "you fit the ___ model x% better than the ___ model"
     
@@ -273,6 +309,13 @@ function(input, output, session) {
     # Load in data (load in earlier to get participant ID)
     
     # Append new results
+    ## remove index column and add participant
+    clean_data$index <- NULL
+    clean_data$participant <- ppt_code
+    
+    
+    full_data <- full_join(full_data, clean_data)
+    print(full_data)
     
     # Update figures
     

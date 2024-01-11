@@ -301,10 +301,7 @@
       word to repeat the process. This test is <strong>self-paced</strong>, so take as long as you need to respond to each
       cue. Feel free to scroll back up to these instructions during your break to refresh yourself on the test protocol.
       Thanks!</p>
-      
-      <!-- Put results here when task is complete -->
-      <div id="accuracySummary"></div>
-      <div id="rtSummary"></div>
+
     </div>
 
   </div>
@@ -519,16 +516,6 @@
     }
     window.startTimer = startTimer; // Make it globally accessible
     
-    // Show results
-    shinyjs.showResults = function(accuracy, rt) {
-            var accuracyDiv = document.getElementById('accuracySummary');
-            var rtDiv = document.getElementById('rtSummary');
-
-            accuracyDiv.innerHTML = '<span class="highlight">' + accuracy + '</span>';
-            rtDiv.innerHTML = '<span class="highlight">' + rt + '</span>';
-
-            // Add more dynamic effects as needed
-        }
         
     // Function to handle scroll events
     function handleScroll() {

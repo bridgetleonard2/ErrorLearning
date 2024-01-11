@@ -40,5 +40,12 @@ fluidPage(
         div(id = "answerTestContainer", style = "font-size: 20px; text-align: center;")
       )
     )
+  ),
+  mainPanel(
+    mainPanel(
+      div(id="accuracySummary"),
+      div(id="rtSummary"),
+      div(id="plotSummary", class="shiny-plot-output", style="width:800px; height:400px;")
+    )
   )
 )

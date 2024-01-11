@@ -7,6 +7,8 @@ date: "2024-01-10"
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
+library(ggplot2)
+library(gridExtra)
 ```
 
 ```{r}
@@ -129,4 +131,17 @@ error_acc <- accuracy %>% filter(condition == 1) %>% pull(accuracy)
     
     print(paste("Error response time:", error_rt))
     print(paste("Study response time:", study_rt))
+```
+
+```{r}
+p1 <- ggplot(accuracy, aes(x = condition, y = accuracy)) +
+      geom_col() + # changed to geom_col for pre-summarized data
+      theme_minimal() +
+      ggtitle("Accuracy by Condition")
+
+p2 <- ggplot(clean_data_rt, aes(x = condition, y = avg_rt)) +
+      geom_col() + # changed to geom_col for pre-summarized data
+      theme_minimal() +
+      ggtitle("Response Time by Condition")
+p2
 ```
