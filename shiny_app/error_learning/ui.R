@@ -12,6 +12,7 @@ library(shiny)
 fluidPage(
   shinyjs::useShinyjs(),  # Initialize shinyjs
   includeHTML("www/index.html"),
+  uiOutput("plotFrame"),
   titlePanel("The Task"),
   
   sidebarLayout(

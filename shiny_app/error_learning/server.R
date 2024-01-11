@@ -23,6 +23,9 @@ function(input, output, session) {
   # Initialize shinyjs to ensure that shinyjs functions are available
   shinyjs::useShinyjs()
   
+  # Define a reactiveValues object to store the plot
+  reactiveValues <- reactiveValues(plot = NULL)
+  
   word_pairs <- data.frame(
     cue = c("PORTRAY", "PRESCRIPTION", "PARCEL", "CANYON", "LATIN", "STERN", "DRACULA", "ROBIN", "WELL", "INTRODUCE",
             "GLIDE", "ORDER", "COURAGEOUS", "HONEYMOON", "LAUNDRY", "MEASUREMENT", "DANCER", "FUGITIVE", "CHIMNEY", "EYES",
@@ -345,6 +348,8 @@ function(input, output, session) {
         performance = (sum(correct) / n())
       )
     
+    print(cleandata_participant)
+    
     cleandata_summary <- cleandata_participant %>% 
       group_by(condition) %>% 
       summarize(
@@ -376,7 +381,7 @@ function(input, output, session) {
       style(textposition = "top right") %>%
       layout(
         title = list(text= "Performance Overview", size = "3vmin"),
-        xaxis = list(title = "Condition", autotypenumbers = "strict", range = c(0.5, 2.5), ticktext = list("Study Items", "Error Items"), 
+        xaxis = list(title = "Condition", autotypenumbers = "strict", range = c(0.5, 2.5), ticktext = list("Error Items", "Study Items"), 
                      tickvals = list(1, 2),
                      tickmode = "array",
                      titlefont = list(size = "2.5vmin")),
@@ -384,11 +389,6 @@ function(input, output, session) {
                      titlefont = list(size = "2.5vmin")),
         showlegend = FALSE,
         hovermode = "closest"
-      ) 
-    
-    # Save first fig
-    htmlwidgets::saveWidget(summary_plot, file = "www/summary.html")
-    # Save data
+      )
   })
-  
 }
