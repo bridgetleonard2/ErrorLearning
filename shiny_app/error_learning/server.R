@@ -13,6 +13,7 @@ library(dplyr)
 library(stringdist)
 library(ggplot2)
 library(gridExtra)
+library(htmlwidgets)
 library(reticulate)
 
 
@@ -151,7 +152,7 @@ function(input, output, session) {
     
     ### DATA ANALYSIS STARTS HERE
     full_data <- read.csv('www/formatted_data.csv')
-    ppt_code <- max(full_data$participant, na.rm = TRUE)
+    ppt_code <- (max(full_data$participant, na.rm = TRUE) + 1)
     
     # You can process or analyze the responses here
     combined_data <- merge(responses_current, answers_current, by = c("cue", "target", "condition"), all = TRUE)
@@ -280,22 +281,41 @@ function(input, output, session) {
     print(paste("Error response time:", error_rt))
     print(paste("Study response time:", study_rt))
     
-    shinyjs::runjs(sprintf("shinyjs.showResults('%s', '%s')", accuracySummary, rtSummary))
+    ## Show Results
+    output$participantID <- renderText({paste0("Hi participant ", ppt_code, "! Let's review your results. To see how you
+                                               compare to the rest of our sample, refresh the page and view the interactive figures again.
+                                               Look for your specific code: ", ppt_code, " to see your own results!")})
+    output$accuracySummary <- renderText({accuracySummary})
+    output$rtSummary <- renderText({rtSummary})
+    
     output$plotSummary <- renderPlot({
       accuracy$condition <- as.factor(unlist(accuracy$condition))
       clean_data_rt$condition <- as.factor(unlist(clean_data_rt$condition))
       
       print(head(accuracy))
       print(head(clean_data_rt))
-      p1 <- ggplot(accuracy, aes(x = condition, y = accuracy)) +
-        geom_bar(stat = "identity") +
+      p1 <- ggplot(accuracy, aes(x = as.factor(condition), y = accuracy, fill = as.factor(condition))) +
+        geom_bar(stat = "identity", width = 0.6) +
+        scale_fill_manual(values = c("#e74c3c", "#2ecc71")) +
+        scale_x_discrete(labels = c("Error Items", "Study Items")) +
+        xlab("Condition") +  # Label for x-axis
+        ylab("Accuracy") +   # Label for y-axis
         theme_minimal() +
+        theme(legend.position = "none") +  # Remove legend
         ggtitle("Accuracy by Condition")
       
-      p2 <- ggplot(clean_data_rt, aes(x = condition, y = avg_rt)) +
-        geom_bar(stat = "identity") +
+      
+      # Adjustments for the second plot
+      p2 <- ggplot(clean_data_rt, aes(x = as.factor(condition), y = avg_rt, fill = as.factor(condition))) +
+        geom_bar(stat = "identity", width = 0.6) +
+        scale_fill_manual(values = c("#e74c3c", "#2ecc71")) +
+        scale_x_discrete(labels = c("Error Items", "Study Items")) +
+        xlab("Condition") +  # Label for x-axis
+        ylab("Response Time") +   # Label for y-axis (assuming you want to label it as 'Response Time')
         theme_minimal() +
+        theme(legend.position = "none") +  # Remove legend
         ggtitle("Response Time by Condition")
+      
       
       grid.arrange(p1, p2, ncol = 2)
     }, width = 800, height = 400)
@@ -315,10 +335,59 @@ function(input, output, session) {
     
     
     full_data <- full_join(full_data, clean_data)
-    print(full_data)
+    print(tail(full_data, 100))
+    
+    #### FIRST FIGURE
+    # RE-summarize data:
+    cleandata_participant <- full_data %>% 
+      group_by(participant, condition) %>% 
+      summarize(
+        performance = (sum(correct) / n())
+      )
+    
+    cleandata_summary <- cleandata_participant %>% 
+      group_by(condition) %>% 
+      summarize(
+        mean_performance = mean(performance),
+        sd_performance = sd(performance),
+        n = n(),
+        stError = sd_performance / sqrt(n)
+      )
     
     # Update figures
+    summary_plot <- plot_ly(data = cleandata_participant, x = ~condition, y = ~performance) %>%
+      add_markers(alpha = 0.75, color = I("#D9D6C7"), split = ~participant, marker = list(size=5),
+                  text = ~performance,
+                  textposition = "auto",
+                  hoverinfo = "text",
+                  hovertext = ~paste0("Participant: ", participant,
+                                      "<br> Observed Accuracy: ", round(performance*100, 2), "%"),
+                  showlegend=FALSE) %>% 
+      add_lines(color = I("#D9D6C7"), line = list(width = 0.3), split = ~participant,
+                showlegend=FALSE) %>%
+      add_markers(data = cleandata_summary %>%  filter(condition== 1), x = ~condition, y = ~mean_performance, error_y = list(type= "data", array = ~stError,color = '#e74c3c', thickness=2), type = "scatter", mode = "markers", marker = list(color = "#e74c3c", size = 12), legendgroup="average",
+                  name="Average - Error", showlegend=FALSE) %>% 
+      add_markers(data = cleandata_summary %>%  filter(condition==2), x = ~condition, y = ~mean_performance, error_y = list(type= "data", array = ~stError,color = '#2ecc71', thickness=2), type = "scatter", mode = "markers", marker = list(color = "#2ecc71", size = 12), legendgroup="average",
+                  name="Average - Study", showlegend=FALSE) %>% 
+      add_text(data = cleandata_summary %>% filter(condition == 1), x = ~condition, y = ~mean_performance, text = ~paste0(round(mean_performance * 100, 2), "%"), textposition = "bottom right", textfont=list(color = c("#000000"), size = 17), legendgroup="average",
+               name="Average - Error", showlegend=FALSE) %>%
+      add_text(data = cleandata_summary %>% filter(condition == 2), x = ~condition, y = ~mean_performance, text = ~paste0(round(mean_performance * 100, 2), "%"), textposition = "bottom right", textfont=list(color = c("#000000"), size = 17), legendgroup="average",
+               name="Average - Study", showlegend=FALSE) %>%
+      style(textposition = "top right") %>%
+      layout(
+        title = list(text= "Performance Overview", size = "3vmin"),
+        xaxis = list(title = "Condition", autotypenumbers = "strict", range = c(0.5, 2.5), ticktext = list("Study Items", "Error Items"), 
+                     tickvals = list(1, 2),
+                     tickmode = "array",
+                     titlefont = list(size = "2.5vmin")),
+        yaxis = list(title = "Accuracy",
+                     titlefont = list(size = "2.5vmin")),
+        showlegend = FALSE,
+        hovermode = "closest"
+      ) 
     
+    # Save first fig
+    htmlwidgets::saveWidget(summary_plot, file = "www/summary.html")
     # Save data
   })
   

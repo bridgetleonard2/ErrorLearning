@@ -43,9 +43,11 @@ fluidPage(
   ),
   mainPanel(
     mainPanel(
-      div(id="accuracySummary"),
-      div(id="rtSummary"),
-      div(id="plotSummary", class="shiny-plot-output", style="width:800px; height:400px;")
+      div(textOutput("participantID"), style = "font-size: 20px;"),
+      div(textOutput("accuracySummary"), style = "font-size: 20px;"),
+      div(textOutput("rtSummary"), style = "font-size: 20px;"),
+      div(plotOutput("plotSummary"), style = "margin-top: 30px; padding: 10px;")
+      
     )
   )
 )
