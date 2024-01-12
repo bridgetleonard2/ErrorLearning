@@ -516,7 +516,11 @@
     }
     window.startTimer = startTimer; // Make it globally accessible
     
-        
+    // update html filename
+    function updateIframeSrc(newFilename) {
+        var iframe = document.getElementById('visual1').getElementsByTagName('iframe')[0];
+        iframe.src = newFilename;
+    }
     // Function to handle scroll events
     function handleScroll() {
       var visuals = document.querySelectorAll('.slide-in');

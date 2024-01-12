@@ -17,6 +17,15 @@ library(htmlwidgets)
 library(reticulate)
 
 
+# Function to find the latest summary file
+latest_summary_file <- function() {
+  files <- list.files("www", pattern = "summary[0-9]+\\.html")
+  if (length(files) == 0) return(NULL)
+  numbers <- as.numeric(gsub("summary([0-9]+)\\.html", "\\1", files))
+  max_number <- max(numbers, na.rm = TRUE)
+  return(paste0("summary", max_number, ".html"))
+}
+
 # Define server logic required to draw a histogram
 # Define server logic required to draw a histogram
 function(input, output, session) {
@@ -323,14 +332,6 @@ function(input, output, session) {
       grid.arrange(p1, p2, ncol = 2)
     }, width = 800, height = 400)
     
-    # Run MLE to find learner type: output: "you fit the ___ model x% better than the ___ model"
-    
-    
-    ## Final output -- use your participant code above to see how your results compare to other in the
-    # interactive figures above!
-    
-    # Load in data (load in earlier to get participant ID)
-    
     # Append new results
     ## remove index column and add participant
     clean_data$index <- NULL
@@ -339,6 +340,22 @@ function(input, output, session) {
     
     full_data <- full_join(full_data, clean_data)
     print(tail(full_data, 100))
+    
+    # Run MLE to find learner type: output: "you fit the ___ model x% better than the ___ model"
+    source_python("LLerror.py")
+    
+    LL_data <- read.csv("www/LL_model1.csv")
+    
+    LL_results <- ll_participant(clean_data, ppt_code, LL_data)
+    
+    participant_ll <- LL_results[[1]]
+    print(participant_ll)
+    LL_data <- LL_results[[2]]
+    
+    ## Final output -- use your participant code above to see how your results compare to other in the
+    # interactive figures above!
+    
+  
     
     #### FIRST FIGURE
     # RE-summarize data:
@@ -390,5 +407,33 @@ function(input, output, session) {
         showlegend = FALSE,
         hovermode = "closest"
       )
+    reactiveValues$plot <- summary_plot
+    
   })
+  
+  observeEvent(reactiveValues$plot, {
+    current_file <- latest_summary_file()
+    
+    # Determine next file number (cycle between 1 and 9)
+    x <- if (is.null(current_file)) 1 else {
+      next_num <- as.numeric(gsub("summary([0-9]+)\\.html", "\\1", current_file)) + 1
+      if (next_num > 9) 1 else next_num
+    }
+    
+    # Delete the old file
+    old_file <- paste0("www/summary", x, ".html")
+    if (file.exists(old_file)) {
+      file.remove(old_file)
+      # Optionally delete corresponding folder if any
+      # unlink(paste0("www/summary", x, "_files"), recursive = TRUE)
+    }
+    
+    # Save new file
+    new_file_name <- paste0("summary", x, ".html")
+    htmlwidgets::saveWidget(reactiveValues$plot, old_file, selfcontained = TRUE)
+    
+    # Update the iframe via JavaScript
+    shinyjs::runjs(sprintf("updateIframeSrc('%s')", new_file_name))
+  })
+  
 }
