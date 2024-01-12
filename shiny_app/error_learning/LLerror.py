@@ -46,9 +46,8 @@ def rtProb(rt, activation, s, ter):
     return rtprob[val]
 
 
-def LLelabRT(full_data, ppt, decay, temp, ter, mas = 1.6):
-    """For each trial, calculate the probability of that response, sum the log likelihoods, and update the values"""
-    data = full_data[full_data.participant == 1001]
+def LLelabRT(alldata, ppt, decay, temp, ter, mas=1.6):
+    data = alldata[alldata.participant == ppt]
     # create a list of error items
     errors = data[data.condition == 1].cue.tolist()
     # create a list of study items
@@ -59,14 +58,13 @@ def LLelabRT(full_data, ppt, decay, temp, ter, mas = 1.6):
         word = study[i]
         present.insert(pos, word)
         pos += 2
-
     # Create dict with word pairs
     pairs = {}
-    for cue, target in zip(data.cue, data.target):
+    for cue, target in zip(data.cue,data.target):
         pairs[cue] = target
     # also create a dict with errors
     errorResp = dict()
-    for cue, response in zip(data.cue, data.study_response):
+    for cue,response in zip(data.cue, data.study_response):
         if isinstance(response, str):
             errorResp[cue] = response
 
@@ -75,33 +73,37 @@ def LLelabRT(full_data, ppt, decay, temp, ter, mas = 1.6):
     # for DM can we make a dictionary of dictionaries where big keys are cues, values are dictionary of target/
     # possible responses and their activation
     time = 0
+    step = 10 #time for learning each item
     for cue in present:
         littleDM = {}
+        study_responses = alldata[alldata.cue == cue]['study_response']
+        test_responses = alldata[alldata.cue == cue]['test_response']
         # make a set of all reponses given to a certain cue to be "vocab for that cue"
-        for response in set(full_data[full_data.cue == cue].study_response):
+        for response in set(pd.concat([study_responses, test_responses])):
             if isinstance(response, str):
                 littleDM[response] = [0.001]
-        # add retrieval of error for error items
-        if cue in errorResp.keys():
-            error = errorResp[cue]
-            time += 5
-            littleDM[error] = [0.001, time]
-            # overwrite smaller activ of correct target to show task learning
-            time += 5
-            littleDM[pairs[cue]] = [0.001, time]
-        else:
-            time += 10
-            littleDM[pairs[cue]] = [0.001, time]
+            # add retrieval of error for error items
+            if cue in errorResp.keys():
+                error = errorResp[cue]
+                time +=5
+                littleDM[error] = [0.001, time]
+                # overwrite smaller activ of correct target to show task learning
+                time +=5
+                littleDM[pairs[cue]] = [0.001, time]
+            else:
+                time += 10
+                littleDM[pairs[cue]] = [0.001, time]
             DM[cue] = littleDM
     time += 300 # time for distractor phase
 
     # model testing phase
     LL = 0
-    for condition, cue, response, rt, feedback in zip(data.condition,
-                                                      data.cue,
-                                                      data.test_response,
-                                                      data.test_rt,
-                                                      data.correct):
+    for condition, cue, target, response, rt, feedback in zip(data.condition,
+                                data.cue,
+                                data.target, 
+                                data.test_response, 
+                                data.test_rt, 
+                                data.correct):
         # Calculate log likelihood of response- possible options are 19 random integers
         # or correct associate
         options = DM[cue].keys()
@@ -109,14 +111,15 @@ def LLelabRT(full_data, ppt, decay, temp, ter, mas = 1.6):
         cueMem = len(DM[cue])
         add = (mas - np.log((cueMem + 1)/2)) - (mas - np.log((cueMem + 1)/1))
         # if error condition, add spreading activation
-        values = [(activation(DM[cue][opt], time, decay) + add) if condition == 1 else
-                  activation(DM[cue][opt], time, decay) for opt in options]
+        values = [(activation(DM[cue][opt], time, decay) + add) if condition == 1 else 
+        activation(DM[cue][opt], time, decay) for opt in options]
+        # Set default value to be a random item in the dict:
         prob = boltzmann(options, values, temp)[response]
 
         # now calculate response times:
         if condition == 1:
             resp_activation = activation(DM[cue][response], time, decay) + add
-        else:
+        else: 
             resp_activation = activation(DM[cue][response], time, decay)
 
         prob_rt = rtProb(rt, resp_activation, temp, ter)
@@ -126,7 +129,6 @@ def LLelabRT(full_data, ppt, decay, temp, ter, mas = 1.6):
 
         # add time taken to responde
         time += rt/1000
-
     return LL
 
 
@@ -144,8 +146,9 @@ def rtProb2(rt, resp_activation, error_activation, condition, s, ter):
     return rtprob[val]
 
 
-def LLmedRT(data, decay, temp, ter):
+def LLmedRT(alldata, ppt, decay, temp, ter):
     """For each trial, calculate the probability of that response, sum the log likelihoods, and update the values"""
+    data = alldata[alldata.participant == ppt]
     # create a list of error items
     errors = data[data.condition == 1].cue.tolist()
     # create a list of study items
@@ -153,17 +156,17 @@ def LLmedRT(data, decay, temp, ter):
     pos = 1
     present = errors[:]
     for i in range(len(errors)):
-        word = study[i]
-        present.insert(pos, word)
-        pos += 2
+      word = study[i]
+      present.insert(pos, word)
+      pos += 2
 
     # Create dict with word pairs
     pairs = {}
-    for cue, target in zip(data.cue, data.target):
+    for cue, target in zip(data.cue,data.target):
         pairs[cue] = target
     # also create a dict with errors
     errorResp = dict()
-    for cue, response in zip(data.cue,data.study_response):
+    for cue,response in zip(data.cue, data.study_response):
         if isinstance(response, str):
             errorResp[cue] = response
 
@@ -172,34 +175,38 @@ def LLmedRT(data, decay, temp, ter):
     # for DM can we make a dictionary of dictionaries where big keys are cues, values are dictionary of target/
     # possible responses and their activation
     time = 0
+    step = 10 #time for learning each item
     for cue in present:
-        littleDM = {}
-        # make a set of all reponses given to a certain cue to be "vocab for that cue"
-        for response in set(data[data.cue == cue].study_response):
-            if isinstance(response, str):
-                littleDM[response] = [0.001]
-        # add retrieval of error for error items
-        if cue in errorResp.keys():
-            error = errorResp[cue]
-            time +=5
-            littleDM[error] = [0.001, time]
-        # overwrite smaller activ of correct target to show task learning
-            time +=5
-            littleDM[pairs[cue]] = [0.001, time]
-        else:
-            time += 10
-            littleDM[pairs[cue]] = [0.001, time]
-        DM[cue] = littleDM
-    time += 300  # time for distractor phase
+      littleDM = {}
+      study_responses = alldata[alldata.cue == cue]['study_response']
+      test_responses = alldata[alldata.cue == cue]['test_response']
+      # make a set of all reponses given to a certain cue to be "vocab for that cue"
+      for response in set(pd.concat([study_responses, test_responses])):
+        if isinstance(response, str):
+          littleDM[response] = [0.001]
+      # add retrieval of error for error items
+      if cue in errorResp.keys():
+        error = errorResp[cue]
+        time +=5
+        littleDM[error] = [0.001, time]
+      # overwrite smaller activ of correct target to show task learning
+        time +=5
+        littleDM[pairs[cue]] = [0.001, time]
+      else:
+        time += 10
+        littleDM[pairs[cue]] = [0.001, time]
+      DM[cue] = littleDM
+    time += 300 # time for distractor phase
 
     # model testing phase
     LL = 0
-
-    for condition, cue, response, rt, feedback in zip(data.condition,
-                                                      data.cue, 
-                                                      data.test_response, 
-                                                      data.test_rt, 
-                                                      data.correct):
+    
+    for condition, cue, target, response, rt, feedback in zip(data.condition,
+                                data.cue,
+                                data.target, 
+                                data.test_response, 
+                                data.test_rt, 
+                                data.correct):
         # Calculate log likelihood of response- possible options are 19 random integers
         # or correct associate
         options = DM[cue].keys()
@@ -210,26 +217,26 @@ def LLmedRT(data, decay, temp, ter):
         
         # probability of retrieving error memory
         if condition == 1:
-            error = errorResp[cue]
-            prob2 = boltzmann(options, values, temp)[error]
+          error = errorResp[cue]
+          prob2 = boltzmann(options, values, temp)[error]
         else:
-            prob2 = 0
+          prob2 = 0
         
         # add response times calculations
         # probability of given response time with
         respAct = activation(DM[cue][response], time, decay)
         if condition == 1:
-            error = errorResp[cue]
-            errorAct = activation(DM[cue][error], time, decay)
-            prob_rt = rtProb2(rt, respAct, errorAct, condition, temp, ter)
+          error = errorResp[cue]
+          errorAct = activation(DM[cue][error], time, decay)
+          prob_rt = rtProb2(rt, respAct, errorAct, condition, temp, ter)
         else:
-            errorAct = 0
-            prob_rt = rtProb2(rt, respAct, errorAct, condition, temp, ter)
+          errorAct = 0
+          prob_rt = rtProb2(rt, respAct, errorAct, condition, temp, ter)
 
         # Sum up the LLs
         LL += (np.log(max(prob1 + prob2, 10e-10)) + np.log(max(prob_rt, 10e-10)))
         
-        # add time taken to responde
+         # add time taken to responde
         time += rt/1000
         
     return LL
