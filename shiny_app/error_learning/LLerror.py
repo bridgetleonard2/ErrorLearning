@@ -247,27 +247,29 @@ def LLmedRT(alldata, ppt, decay, temp, ter):
     return LL
 
 
-def vLLelab(array, data):
+def vLLelab(array, data, ppt):
     """Vector function of procedural log-likelihood"""
     decay, temp, ter = array
-    return -1 * LLelabRT(data, decay, temp, ter)
+    return -1 * LLelabRT(data, ppt, decay, temp, ter)
 
 
-def vLLmed(array, data):
+def vLLmed(array, data, ppt):
     """Vector function of procedural log-likelihood"""
     decay, temp, ter = array
-    return -1 * LLmedRT(data, decay, temp, ter)
+    return -1 * LLmedRT(data, ppt, decay, temp, ter)
 
 
 def ll_participant(alldata, ppt, LL_data):
     data = alldata[alldata.participant == ppt]
     print(data)
-    edecay, etemp, eter = opt.minimize(vLLelab, x0=[0.5, 1, 1], args=(data,),
+    edecay, etemp, eter = opt.minimize(vLLelab, x0=[0.5, 1, 1],
+                                       args=(data, ppt),
                                        method="Powell",
                                        bounds=[[0.01, 2], [0, 2], [0.1, 2]]).x
     llelab = LLelabRT(alldata, ppt, edecay, etemp, eter)
 
-    mdecay, mtemp, mter = opt.minimize(vLLmed, x0=[0.5, 1, 1], args=(data,),
+    mdecay, mtemp, mter = opt.minimize(vLLmed, x0=[0.5, 1, 1],
+                                       args=(data, ppt),
                                        method="Powell",
                                        bounds=[[0.01, 2], [0, 2], [0.1, 2]]).x
     llmed = LLmedRT(alldata, ppt, mdecay, mtemp, mter)
@@ -281,6 +283,8 @@ def ll_participant(alldata, ppt, LL_data):
     row = [ppt, edecay, etemp, eter, llelab,
            mdecay, mtemp, mter, llmed, best, diff]
 
-    LL_data = LL_data.append(row, ignore_index=True)
+
+    LL_data = pd.concat([LL_data, pd.DataFrame([row], columns=LL_data.columns)], ignore_index=True)
+
 
     return row, LL_data

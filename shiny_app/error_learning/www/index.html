@@ -517,10 +517,11 @@
     window.startTimer = startTimer; // Make it globally accessible
     
     // update html filename
-    function updateIframeSrc(newFilename) {
+    function updateIframe1() {
         var iframe = document.getElementById('visual1').getElementsByTagName('iframe')[0];
-        iframe.src = newFilename;
+        iframe.src = iframe.src;
     }
+    
     // Function to handle scroll events
     function handleScroll() {
       var visuals = document.querySelectorAll('.slide-in');
