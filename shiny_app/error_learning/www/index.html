@@ -517,9 +517,14 @@
     window.startTimer = startTimer; // Make it globally accessible
     
     // update html filename
-    function updateIframe1() {
+    function updateIframe1(filename) {
         var iframe = document.getElementById('visual1').getElementsByTagName('iframe')[0];
-        iframe.src = iframe.src;
+        iframe.src = filename;
+    }
+    
+    function updateIframe2(filename) {
+        var iframe = document.getElementById('visual2').getElementsByTagName('iframe')[0];
+        iframe.src = filename;
     }
     
     // Function to handle scroll events

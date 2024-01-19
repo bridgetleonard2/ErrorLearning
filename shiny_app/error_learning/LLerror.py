@@ -283,8 +283,8 @@ def ll_participant(alldata, ppt, LL_data):
     row = [ppt, edecay, etemp, eter, llelab,
            mdecay, mtemp, mter, llmed, best, diff]
 
-
-    LL_data = pd.concat([LL_data, pd.DataFrame([row], columns=LL_data.columns)], ignore_index=True)
-
+    LL_data = pd.concat([LL_data, pd.DataFrame([row],
+                                               columns=LL_data.columns)],
+                        ignore_index=True)
 
     return row, LL_data

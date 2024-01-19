@@ -10,6 +10,7 @@
 library(shiny)
 # Data manipulation and analysis
 library(plotly)
+library(tidyr)
 library(dplyr)
 library(stringdist)
 library(ggplot2)
@@ -521,36 +522,47 @@ function(input, output, session) {
     #   reactiveValues$table <- datatable_ll
   })
   
+  # Each plot refresh changes between two names to avoid caching issues
   observeEvent(reactiveValues$plot1, {
-    # Define the file path
-    file_path <- "www/summary.html"
+    # Define file paths
+    file_path1 <- "www/summary.html"
+    file_path2 <- "www/summary1.html"
     
-    # Delete the old file if it exists
-    if (file.exists(file_path)) {
-      file.remove(file_path)
+    # Determine which file to write to and which to delete
+    if (file.exists(file_path1)) {
+      # Save new plot to summary1.html and delete summary.html
+      htmlwidgets::saveWidget(reactiveValues$plot1, file_path2, selfcontained = TRUE)
+      file.remove(file_path1)
+      shinyjs::runjs("updateIframe1('summary1.html')")
+    } else {
+      # Save new plot to summary.html and delete summary1.html
+      htmlwidgets::saveWidget(reactiveValues$plot1, file_path1, selfcontained = TRUE)
+      if (file.exists(file_path2)) {
+        file.remove(file_path2)
+      }
+      shinyjs::runjs("updateIframe1('summary.html')")
     }
-    
-    # Save the new plot to the same file name
-    htmlwidgets::saveWidget(reactiveValues$plot1, file_path, selfcontained = TRUE)
-    
-    # Update the iframe via JavaScript
-    shinyjs::runjs("updateIframe1()")
   })
   
   observeEvent(reactiveValues$plot2, {
-    # Define the file path
-    file_path <- "www/accuracy.html"
+    # Define file paths
+    file_path1 <- "www/accuracy.html"
+    file_path2 <- "www/accuracy1.html"
     
-    # Delete the old file if it exists
-    if (file.exists(file_path)) {
-      file.remove(file_path)
+    # Determine which file to write to and which to delete
+    if (file.exists(file_path1)) {
+      # Save new plot to accuracy1.html and delete accuracy.html
+      htmlwidgets::saveWidget(reactiveValues$plot2, file_path2, selfcontained = TRUE)
+      file.remove(file_path1)
+      shinyjs::runjs("updateIframe2('accuracy1.html')")
+    } else {
+      # Save new plot to accuracy.html and delete accuracy1.html
+      htmlwidgets::saveWidget(reactiveValues$plot2, file_path1, selfcontained = TRUE)
+      if (file.exists(file_path2)) {
+        file.remove(file_path2)
+      }
+      shinyjs::runjs("updateIframe2('accuracy.html')")
     }
-    
-    # Save the new plot to the same file name
-    htmlwidgets::saveWidget(reactiveValues$plot2, file_path, selfcontained = TRUE)
-    
-    # Update the iframe via JavaScript
-    shinyjs::runjs("updateIframe2()")
   })
   
   observeEvent(reactiveValues$plot3, {
