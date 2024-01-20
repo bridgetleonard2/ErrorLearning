@@ -17,6 +17,8 @@ library(ggplot2)
 library(gridExtra)
 library(htmlwidgets)
 library(reticulate)
+use_python("C:\\Users\\Bridget Leonard\\AppData\\Local\\Programs\\Python\\Python312")
+
 
 
 # Function to find the latest summary file
@@ -343,17 +345,16 @@ function(input, output, session) {
     full_data <- full_join(full_data, clean_data)
     print(tail(full_data, 100))
     
-    # # Run MLE to find learner type: output: "you fit the ___ model x% better than the ___ model"
-    # source_python("LLerror.py")
-    # 
-    # LL_data <- read.csv("www/LL_model1.csv")
-    # 
-    # LL_results <- ll_participant(clean_data, ppt_code, LL_data)
-    # 
-    # participant_ll <- LL_results[[1]]
-    # print(participant_ll)
-    # LL_data <- LL_results[[2]]
+    # Run MLE to find learner type: output: "you fit the ___ model x% better than the ___ model"
+    source_python("LLerror.py")
     
+    LL_data <- read.csv("www/LL_model1.csv")
+    LL_results <- ll_participant(clean_data, ppt_code, LL_data)
+    
+    participant_ll <- LL_results[[1]]
+    print(participant_ll)
+    LL_data <- LL_results[[2]]
+
     ## Final output -- use your participant code above to see how your results compare to other in the
     # interactive figures above!
     
