@@ -118,7 +118,6 @@ There are clearly some trials, from a few participants, that take a huge amount 
 
 ```{r}
 cleandata <- clean_errors %>% filter(rt > 200, rt < 15000)
-write.csv(cleandata, )
 ```
 
 Finally, we are going to rename the conditions to make sure we are using meaningful labels, and make sure that correct is between 0 and 1.
