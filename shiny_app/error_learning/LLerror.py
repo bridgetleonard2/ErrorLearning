@@ -47,9 +47,8 @@ def LLelabRT(alldata, ppt, decay, temp, ter, mas=1.6):
     # create a list of study items
     study = data[data.condition == 2].cue.tolist()
     pos = 1
-    present = errors[:]
-    for i in range(len(errors)):
-        word = study[i]
+    present = study[:]
+    for word in errors:
         present.insert(pos, word)
         pos += 2
     # Create dict with word pairs
@@ -156,9 +155,8 @@ def LLmedRT(alldata, ppt, decay, temp, ter):
     # create a list of study items
     study = data[data.condition == 2].cue.tolist()
     pos = 1
-    present = errors[:]
-    for i in range(len(errors)):
-        word = study[i]
+    present = study[:]
+    for word in errors:
         present.insert(pos, word)
         pos += 2
 

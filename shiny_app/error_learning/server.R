@@ -85,9 +85,9 @@ function(input, output, session) {
   word_pairs <- word_pairs[sample(nrow(word_pairs)), ]
   # word_pairs <- head(word_pairs, 10)
   
-  word_pairs <- word_pairs %>%
-    group_by(condition) %>%
-    slice_sample(n = 5)
+  # word_pairs <- word_pairs %>%
+  #   group_by(condition) %>%
+  #   slice_sample(n = 5)
   
   responses <- reactiveValues(values = list())
   answers <- reactiveValues(values = list())
@@ -238,7 +238,7 @@ function(input, output, session) {
     
     # 2) Miss <10 guesses -- includes misses that were calculated as NA in step 1
     ## - This is where a participant may be excluded and prompted to try again
-    if (nrow(filtered_data) < (nrow(word_pairs) - 60)) { ###################
+    if (nrow(filtered_data) < (nrow(word_pairs) - 10)) { ###################
       print("Not enough data due to...")
     } else {
       # 3) Remove items with correct guess
