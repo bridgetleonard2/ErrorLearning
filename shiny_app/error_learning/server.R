@@ -9,7 +9,6 @@
 
 library(shiny)
 # Data manipulation and analysis
-library(plotly)
 library(tidyr)
 library(dplyr)
 library(stringdist)
@@ -19,6 +18,8 @@ library(htmlwidgets)
 library(reticulate)
 library(formattable)
 library(DT)
+
+library(plotly)
 use_python("C:\\Users\\Bridget Leonard\\AppData\\Local\\Programs\\Python\\Python312")
 
 
@@ -406,6 +407,8 @@ function(input, output, session) {
         n = n(),
         stError = sd_performance / sqrt(n)
       )
+    
+    print(class(cleandata_summary$mean_performance))
     
     # Update figures
     summary_plot <- plot_ly(data = cleandata_participant, x = ~condition, y = ~performance) %>%
