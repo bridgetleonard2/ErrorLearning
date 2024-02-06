@@ -18,8 +18,10 @@ library(htmlwidgets)
 library(reticulate)
 library(formattable)
 library(DT)
+library(htmltools)
 
 library(plotly)
+
 use_python("C:\\Users\\Bridget Leonard\\AppData\\Local\\Programs\\Python\\Python312")
 
 
@@ -505,54 +507,55 @@ function(input, output, session) {
 
     reactiveValues$plot3 <- learner_plot
       
-      ### TABLE
-      # Create datatable
-      # clean_ll <- LL_data %>%
-      #   dplyr::select(Participant, elab.LL, med.LL, diff.LL, best.model) %>%
-      #   rename('Elaborative Score' = 'elab.LL', 'Mediator Score' = 'med.LL',
-      #          'Score Difference' = 'diff.LL', 'Model' = 'best.model')
-      # 
-      # med_elab_formatter <-
-      #   formatter("span",
-      #             style = x ~ style(
-      #               font.weight = "bold",
-      #               color = ifelse(x == 'Mediator', "#9b59b6", ifelse(x == 'Elaborative', "#f39c12", "white"))
-      #             ))
-      # 
-      # datatable_ll <- formattable(clean_ll,
-      #                             list(
-      #                               'Score Difference' = color_tile("#f7c46c", "#b984cc"),
-      #                               'Model' = med_elab_formatter
-      #                             )) %>%
-      #   as.datatable(options = list(
-      #     initComplete = JS(
-      #       "function(settings, json) {",
-      #       "$('body').css({'font-family': 'Calibri'});",
-      #       "}"
-      #     ),
-      #     paging = TRUE,    ## paginate the output
-      #     pageLength = 15,  ## number of rows to output for each page
-      #     scrollX = TRUE,   ## enable scrolling on X axis
-      #     scrollY = TRUE,   ## enable scrolling on Y axis
-      #     autoWidth = TRUE, ## use smart column width handling
-      #     server = FALSE,   ## use client-side processing
-      #     dom = 'Bfrtip',
-      #     buttons = c('csv', 'excel')),
-      #     extensions = 'Buttons',
-      #     selection = 'single', ## enable selection of a single row
-      #     filter = 'bottom',              ## include column filters at the bottom
-      #     rownames = FALSE                ## don't show row numbers/names
-      #   )
-      # 
+      ## TABLE
+      #Create datatable
+      clean_ll <- LL_data %>%
+        dplyr::select(Participant, elab.LL, med.LL, diff.LL, best.model) %>%
+        rename('Elaborative Score' = 'elab.LL', 'Mediator Score' = 'med.LL',
+               'Score Difference' = 'diff.LL', 'Model' = 'best.model')
+
+      med_elab_formatter <-
+        formatter("span",
+                  style = x ~ formattable::style(
+                    font.weight = "bold",
+                    color = ifelse(x == 'Mediator', "#9b59b6", ifelse(x == 'Elaborative', "#f39c12", "white")
+                  )
+                  ))
+
+      datatable_ll <- formattable(clean_ll,
+                                  list(
+                                    'Score Difference' = color_tile("#f7c46c", "#b984cc"),
+                                    'Model' = med_elab_formatter
+                                  )) %>%
+        as.datatable(options = list(
+          initComplete = JS(
+            "function(settings, json) {",
+            "$('body').css({'font-family': 'Calibri'});",
+            "}"
+          ),
+          paging = TRUE,    ## paginate the output
+          pageLength = 15,  ## number of rows to output for each page
+          scrollX = TRUE,   ## enable scrolling on X axis
+          scrollY = TRUE,   ## enable scrolling on Y axis
+          autoWidth = TRUE, ## use smart column width handling
+          server = FALSE,   ## use client-side processing
+          dom = 'Bfrtip',
+          buttons = c('csv', 'excel')),
+          extensions = 'Buttons',
+          selection = 'single', ## enable selection of a single row
+          filter = 'bottom',              ## include column filters at the bottom
+          rownames = FALSE                ## don't show row numbers/names
+        )
+
       # title <- tags$caption(
       #   style = "caption-side: top; font-size: 18px; font-weight: bold; margin-bottom: 10px;",
       #   "My Formattable Datatable"
       # )
-      # 
+
       # # Combine the title and the datatable using htmltools::tagList
-      # datatable_ll <- tagList(title, datatable_ll)
-      # 
-      # reactiveValues$table <- datatable_ll
+      # datatable_ll <- htmltools::tagList(title, datatable_ll)
+
+      reactiveValues$table <- datatable_ll
   })
   
   # Each plot refresh changes between two names to avoid caching issues
@@ -619,24 +622,24 @@ function(input, output, session) {
     }
   })
 
-  # observeEvent(reactiveValues$table, {
-  #   # Define the file path
-  #   file_path1 <- "www/dt.html"
-  #   file_path2 <- "www/dt1.html"
-  #   
-  #   # Determine which file to write to and which to delete
-  #   if (file.exists(file_path1)) {
-  #     htmlwidgets::saveWidget(reactiveValues$table, file_path2, selfcontained = TRUE)
-  #     file.remove(file_path1)
-  #     shinyjs::runjs("updateIframe3('dt1.html')")
-  #   } else {
-  #     # Save new plot to accuracy.html and delete accuracy1.html
-  #     htmlwidgets::saveWidget(reactiveValues$table, file_path1, selfcontained = TRUE)
-  #     if (file.exists(file_path2)) {
-  #       file.remove(file_path2)
-  #     }
-  #     shinyjs::runjs("updateIframe4('dt.html')")
-  #   }
-  # })
+  observeEvent(reactiveValues$table, {
+    # Define the file path
+    file_path1 <- "www/dt.html"
+    file_path2 <- "www/dt1.html"
+
+    # Determine which file to write to and which to delete
+    if (file.exists(file_path1)) {
+      htmlwidgets::saveWidget(reactiveValues$table, file_path2, selfcontained = TRUE)
+      file.remove(file_path1)
+      shinyjs::runjs("updateIframe4('dt1.html')")
+    } else {
+      # Save new plot to accuracy.html and delete accuracy1.html
+      htmlwidgets::saveWidget(reactiveValues$table, file_path1, selfcontained = TRUE)
+      if (file.exists(file_path2)) {
+        file.remove(file_path2)
+      }
+      shinyjs::runjs("updateIframe4('dt.html')")
+    }
+  })
   
 }
