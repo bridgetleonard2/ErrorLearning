@@ -17,18 +17,11 @@ library(ggplot2)
 library(gridExtra)
 library(htmlwidgets)
 library(reticulate)
+library(formattable)
+library(DT)
 use_python("C:\\Users\\Bridget Leonard\\AppData\\Local\\Programs\\Python\\Python312")
 
 
-
-# Function to find the latest summary file
-latest_summary_file <- function() {
-  files <- list.files("www", pattern = "summary[0-9]+\\.html")
-  if (length(files) == 0) return(NULL)
-  numbers <- as.numeric(gsub("summary([0-9]+)\\.html", "\\1", files))
-  max_number <- max(numbers, na.rm = TRUE)
-  return(paste0("summary", max_number, ".html"))
-}
 
 # Define server logic required to draw a histogram
 # Define server logic required to draw a histogram
@@ -39,6 +32,35 @@ function(input, output, session) {
   # Define a reactiveValues object to store the plot
   reactiveValues <- reactiveValues(plot1 = NULL, plot2 = NULL, plot3 = NULL, table = NULL)
   
+  # Find current plot values
+  # Determine which file to write to and which to delete
+  if (file.exists("www/summary.html")) {
+    shinyjs::runjs("updateIframe1('summary.html')")
+  } else {
+    shinyjs::runjs("updateIframe1('summary1.html')")
+  }
+  
+  if (file.exists("www/accuracy.html")) {
+    shinyjs::runjs("updateIframe2('accuracy.html')")
+  } else {
+    shinyjs::runjs("updateIframe2('accuracy1.html')")
+  }
+  
+  if (file.exists("www/learner.html")) {
+    shinyjs::runjs("updateIframe3('learner.html')")
+  } else {
+    shinyjs::runjs("updateIframe3('learner1.html')")
+  }
+  
+  if (file.exists("www/dt.html")) {
+    shinyjs::runjs("updateIframe4('dt.html')")
+  } else {
+    shinyjs::runjs("updateIframe4('dt1.html')")
+  }
+  
+  
+  
+    
   word_pairs <- data.frame(
     cue = c("PORTRAY", "PRESCRIPTION", "PARCEL", "CANYON", "LATIN", "STERN", "DRACULA", "ROBIN", "WELL", "INTRODUCE",
             "GLIDE", "ORDER", "COURAGEOUS", "HONEYMOON", "LAUNDRY", "MEASUREMENT", "DANCER", "FUGITIVE", "CHIMNEY", "EYES",
@@ -58,7 +80,11 @@ function(input, output, session) {
   
   # Shuffle the word pairs
   word_pairs <- word_pairs[sample(nrow(word_pairs)), ]
-  word_pairs <- head(word_pairs, 10)
+  # word_pairs <- head(word_pairs, 10)
+  
+  word_pairs <- word_pairs %>%
+    group_by(condition) %>%
+    slice_sample(n = 5)
   
   responses <- reactiveValues(values = list())
   answers <- reactiveValues(values = list())
@@ -106,7 +132,7 @@ function(input, output, session) {
     responses_data(responses_current)
     # Clear last word pair and start timer
     shinyjs::runjs(sprintf("shinyjs.updateWordPair('%s', '%s', %d)", "", "", 2))
-    shinyjs::runjs("startTimer(300);")
+    shinyjs::runjs("startTimer(5);") #########################
     # You can process or analyze the responses here
   })
   
@@ -209,7 +235,7 @@ function(input, output, session) {
     
     # 2) Miss <10 guesses -- includes misses that were calculated as NA in step 1
     ## - This is where a participant may be excluded and prompted to try again
-    if (nrow(filtered_data) < (nrow(word_pairs) - 10)) {
+    if (nrow(filtered_data) < (nrow(word_pairs) - 60)) { ###################
       print("Not enough data due to...")
     } else {
       # 3) Remove items with correct guess
@@ -346,14 +372,16 @@ function(input, output, session) {
     print(tail(full_data, 100))
     
     # # Run MLE to find learner type: output: "you fit the ___ model x% better than the ___ model"
-    # source_python("LLerror.py")
-    # 
-    # LL_data <- read.csv("www/LL_model1.csv")
-    # LL_results <- ll_participant(clean_data, ppt_code, LL_data)
-    # 
-    # participant_ll <- LL_results[[1]]
-    # print(participant_ll)
-    # LL_data <- LL_results[[2]]
+    source_python("LLerror.py")
+
+    LL_data <- read.csv("www/LL_model1.csv", row.names = NULL)
+    LL_data <- LL_data[-nrow(LL_data), -1]
+    
+    LL_results <- ll_participant(clean_data, ppt_code, LL_data)
+
+    participant_ll <- LL_results[[1]]
+    print(participant_ll)
+    LL_data <- LL_results[[2]]
 
     ## Final output -- use your participant code above to see how your results compare to other in the
     # interactive figures above!
@@ -445,82 +473,83 @@ function(input, output, session) {
       )
 
     reactiveValues$plot2 <- accuracy_plot
-    # 
-    #   ### THIRD FIGURE
-    #   colors = c("#f39c12", "#9b59b6")
-    #   
-    #   ll_pie <- LL_data %>% 
-    #     dplyr::select(best.model) %>% 
-    #     group_by(best.model) %>% 
-    #     summarize(count = n())
-    #   
-    #   # Create pie chart with custom colors
-    #   learner_plot <- plot_ly(
-    #     data = ll_pie,
-    #     labels = ~best.model,
-    #     values = ~count,
-    #     type = 'pie',
-    #     rotation = 150,
-    #     textinfo = "label+percent",
-    #     hoverinfo = "text+value",
-    #     hole = 0.6,
-    #     marker = list(colors = colors, line = list(color = '#FFFFFF', width = 1))
-    #   ) %>%
-    #     layout(
-    #       title = list(text="Type of Learner",size=18),
-    #       showlegend = FALSE,
-    #       font = list(size = "4vmin", color = "#000000")
-    #     )
-    #   
-    #   reactiveValues$plot3 <- learner_plot
-    #   ### TABLE
-    #   # Create datatable
-    #   clean_ll <- LL_data %>% 
-    #     dplyr::select(Participant, elab.LL, med.LL, diff.LL, best.model) %>% 
-    #     rename('Elaborative Score' = 'elab.LL', 'Mediator Score' = 'med.LL',
-    #            'Score Difference' = 'diff.LL', 'Model' = 'best.model')
-    #   
-    #   med_elab_formatter <-
-    #     formatter("span",
-    #               style = x ~ style(
-    #                 font.weight = "bold",
-    #                 color = ifelse(x == 'Mediator', "#9b59b6", ifelse(x == 'Elaborative', "#f39c12", "white"))
-    #               ))
-    #   
-    #   datatable_ll <- formattable(clean_ll,
-    #                               list(
-    #                                 'Score Difference' = color_tile("#f7c46c", "#b984cc"),
-    #                                 'Model' = med_elab_formatter
-    #                               )) %>% 
-    #     as.datatable(options = list(
-    #       initComplete = JS(
-    #         "function(settings, json) {",
-    #         "$('body').css({'font-family': 'Calibri'});",
-    #         "}"
-    #       ),
-    #       paging = TRUE,    ## paginate the output
-    #       pageLength = 15,  ## number of rows to output for each page
-    #       scrollX = TRUE,   ## enable scrolling on X axis
-    #       scrollY = TRUE,   ## enable scrolling on Y axis
-    #       autoWidth = TRUE, ## use smart column width handling
-    #       server = FALSE,   ## use client-side processing
-    #       dom = 'Bfrtip',
-    #       buttons = c('csv', 'excel')),
-    #       extensions = 'Buttons',
-    #       selection = 'single', ## enable selection of a single row
-    #       filter = 'bottom',              ## include column filters at the bottom
-    #       rownames = FALSE                ## don't show row numbers/names
-    #     )
-    #   
-    #   title <- tags$caption(
-    #     style = "caption-side: top; font-size: 18px; font-weight: bold; margin-bottom: 10px;",
-    #     "My Formattable Datatable"
-    #   )
-    #   
-    #   # Combine the title and the datatable using htmltools::tagList
-    #   datatable_ll <- tagList(title, datatable_ll)
-    #   
-    #   reactiveValues$table <- datatable_ll
+
+    ### THIRD FIGURE
+    colors = c("#f39c12", "#9b59b6")
+
+    ll_pie <- LL_data %>%
+      dplyr::select(best.model) %>%
+      group_by(best.model) %>%
+      summarize(count = n())
+
+    # Create pie chart with custom colors
+    learner_plot <- plot_ly(
+      data = ll_pie,
+      labels = ~best.model,
+      values = ~count,
+      type = 'pie',
+      rotation = 150,
+      textinfo = "label+percent",
+      hoverinfo = "text+value",
+      hole = 0.6,
+      marker = list(colors = colors, line = list(color = '#FFFFFF', width = 1))
+    ) %>%
+      layout(
+        title = list(text="Type of Learner",size=18),
+        showlegend = FALSE,
+        font = list(size = "4vmin", color = "#000000")
+      )
+
+    reactiveValues$plot3 <- learner_plot
+      
+      ### TABLE
+      # Create datatable
+      # clean_ll <- LL_data %>%
+      #   dplyr::select(Participant, elab.LL, med.LL, diff.LL, best.model) %>%
+      #   rename('Elaborative Score' = 'elab.LL', 'Mediator Score' = 'med.LL',
+      #          'Score Difference' = 'diff.LL', 'Model' = 'best.model')
+      # 
+      # med_elab_formatter <-
+      #   formatter("span",
+      #             style = x ~ style(
+      #               font.weight = "bold",
+      #               color = ifelse(x == 'Mediator', "#9b59b6", ifelse(x == 'Elaborative', "#f39c12", "white"))
+      #             ))
+      # 
+      # datatable_ll <- formattable(clean_ll,
+      #                             list(
+      #                               'Score Difference' = color_tile("#f7c46c", "#b984cc"),
+      #                               'Model' = med_elab_formatter
+      #                             )) %>%
+      #   as.datatable(options = list(
+      #     initComplete = JS(
+      #       "function(settings, json) {",
+      #       "$('body').css({'font-family': 'Calibri'});",
+      #       "}"
+      #     ),
+      #     paging = TRUE,    ## paginate the output
+      #     pageLength = 15,  ## number of rows to output for each page
+      #     scrollX = TRUE,   ## enable scrolling on X axis
+      #     scrollY = TRUE,   ## enable scrolling on Y axis
+      #     autoWidth = TRUE, ## use smart column width handling
+      #     server = FALSE,   ## use client-side processing
+      #     dom = 'Bfrtip',
+      #     buttons = c('csv', 'excel')),
+      #     extensions = 'Buttons',
+      #     selection = 'single', ## enable selection of a single row
+      #     filter = 'bottom',              ## include column filters at the bottom
+      #     rownames = FALSE                ## don't show row numbers/names
+      #   )
+      # 
+      # title <- tags$caption(
+      #   style = "caption-side: top; font-size: 18px; font-weight: bold; margin-bottom: 10px;",
+      #   "My Formattable Datatable"
+      # )
+      # 
+      # # Combine the title and the datatable using htmltools::tagList
+      # datatable_ll <- tagList(title, datatable_ll)
+      # 
+      # reactiveValues$table <- datatable_ll
   })
   
   # Each plot refresh changes between two names to avoid caching issues
@@ -568,34 +597,43 @@ function(input, output, session) {
   
   observeEvent(reactiveValues$plot3, {
     # Define the file path
-    file_path <- "www/learner.html"
+    file_path1 <- "www/learner.html"
+    file_path2 <- "www/learner1.html"
     
-    # Delete the old file if it exists
-    if (file.exists(file_path)) {
-      file.remove(file_path)
+    # Determine which file to write to and which to delete
+    if (file.exists(file_path1)) {
+      # Save new plot to accuracy1.html and delete accuracy.html
+      htmlwidgets::saveWidget(reactiveValues$plot3, file_path2, selfcontained = TRUE)
+      file.remove(file_path1)
+      shinyjs::runjs("updateIframe3('learner1.html')")
+    } else {
+      # Save new plot to accuracy.html and delete accuracy1.html
+      htmlwidgets::saveWidget(reactiveValues$plot3, file_path1, selfcontained = TRUE)
+      if (file.exists(file_path2)) {
+        file.remove(file_path2)
+      }
+      shinyjs::runjs("updateIframe3('learner.html')")
     }
-    
-    # Save the new plot to the same file name
-    htmlwidgets::saveWidget(reactiveValues$plot3, file_path, selfcontained = TRUE)
-    
-    # Update the iframe via JavaScript
-    shinyjs::runjs("updateIframe3()")
   })
-  
-  observeEvent(reactiveValues$table, {
-    # Define the file path
-    file_path <- "www/dt.html"
-    
-    # Delete the old file if it exists
-    if (file.exists(file_path)) {
-      file.remove(file_path)
-    }
-    
-    # Save the new plot to the same file name
-    htmlwidgets::saveWidget(reactiveValues$table, file_path, selfcontained = TRUE)
-    
-    # Update the iframe via JavaScript
-    shinyjs::runjs("updateIframe4()")
-  })
+
+  # observeEvent(reactiveValues$table, {
+  #   # Define the file path
+  #   file_path1 <- "www/dt.html"
+  #   file_path2 <- "www/dt1.html"
+  #   
+  #   # Determine which file to write to and which to delete
+  #   if (file.exists(file_path1)) {
+  #     htmlwidgets::saveWidget(reactiveValues$table, file_path2, selfcontained = TRUE)
+  #     file.remove(file_path1)
+  #     shinyjs::runjs("updateIframe3('dt1.html')")
+  #   } else {
+  #     # Save new plot to accuracy.html and delete accuracy1.html
+  #     htmlwidgets::saveWidget(reactiveValues$table, file_path1, selfcontained = TRUE)
+  #     if (file.exists(file_path2)) {
+  #       file.remove(file_path2)
+  #     }
+  #     shinyjs::runjs("updateIframe4('dt.html')")
+  #   }
+  # })
   
 }
