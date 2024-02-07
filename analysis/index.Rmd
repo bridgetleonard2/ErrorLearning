@@ -5,7 +5,7 @@ output:
     theme:
       bg: "#FFFFFF"
       fg: "#000000" 
-      primary: "#FFA500"
+      primary: "#7ab3bf"
       base_font:
         google: Prompt
       code_font:
@@ -54,7 +54,7 @@ library(flexdashboard)
 
 ```{r}
 # Load data:
-errors <- read_excel("behavioral_data/error_data.xlsx")
+errors <- read.csv("../data/error_data.csv")
 ```
 
 
@@ -129,7 +129,7 @@ rt_model_complex <- lmer(rt ~ condition # Fixed effect of condition
 ```
 
 ```{r}
-lldata <- read.csv("LL_model1.csv")
+lldata <- read.csv("maximum_likelihood/LL_model1.csv")
 lldata <- lldata %>% 
   filter(X != 61)
 ```
@@ -689,7 +689,7 @@ Column
 ### Results
 
 ```{r}
-lldata <- read.csv("LL_model1.csv")
+lldata <- read.csv("maximum_likelihood/LL_model1.csv")
 lldata <- lldata %>% 
   filter(X != 61)
 ```
