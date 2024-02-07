@@ -44,10 +44,22 @@ fluidPage(
   ),
   mainPanel(
     mainPanel(
-      div(textOutput("participantID"), style = "font-size: 20px;"),
-      div(textOutput("accuracySummary"), style = "font-size: 20px;"),
-      div(textOutput("rtSummary"), style = "font-size: 20px;"),
-      div(textOutput("learnerSummary"), style = "font-size: 20px;"),
+      div(
+        textOutput("participantID"), 
+        style = "font-size: 20px; margin-bottom: 10px;"
+      ),
+      div(
+        textOutput("accuracySummary"), 
+        style = "font-size: 20px; margin-bottom: 10px;"
+      ),
+      div(
+        textOutput("rtSummary"), 
+        style = "font-size: 20px; margin-bottom: 10px;"
+      ),
+      div(
+        textOutput("learnerSummary"), 
+        style = "font-size: 20px; margin-bottom: 10px;"
+      ),
       div(plotOutput("plotSummary"), style = "margin-top: 30px; padding: 10px;")
       
     )

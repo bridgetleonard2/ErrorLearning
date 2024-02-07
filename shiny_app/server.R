@@ -37,28 +37,28 @@ function(input, output, session) {
   
   # Find current plot values
   # Determine which file to write to and which to delete
-  if (file.exists("www/summary.html")) {
-    shinyjs::runjs("updateIframe1('summary.html')")
+  if (file.exists("www/updatingFigs/summary.html")) {
+    shinyjs::runjs("updateIframe1('updatingFigs/summary.html')")
   } else {
-    shinyjs::runjs("updateIframe1('summary1.html')")
+    shinyjs::runjs("updateIframe1('updatingFigs/summary1.html')")
   }
   
-  if (file.exists("www/accuracy.html")) {
-    shinyjs::runjs("updateIframe2('accuracy.html')")
+  if (file.exists("www/updatingFigs/accuracy.html")) {
+    shinyjs::runjs("updateIframe2('updatingFigs/accuracy.html')")
   } else {
-    shinyjs::runjs("updateIframe2('accuracy1.html')")
+    shinyjs::runjs("updateIframe2('updatingFigs/accuracy1.html')")
   }
   
-  if (file.exists("www/learner.html")) {
-    shinyjs::runjs("updateIframe3('learner.html')")
+  if (file.exists("www/updatingFigs/learner.html")) {
+    shinyjs::runjs("updateIframe3('updatingFigs/learner.html')")
   } else {
-    shinyjs::runjs("updateIframe3('learner1.html')")
+    shinyjs::runjs("updateIframe3('updatingFigs/learner1.html')")
   }
   
-  if (file.exists("www/dt.html")) {
-    shinyjs::runjs("updateIframe4('dt.html')")
+  if (file.exists("www/updatingFigs/dt.html")) {
+    shinyjs::runjs("updateIframe4('updatingFigs/dt.html')")
   } else {
-    shinyjs::runjs("updateIframe4('dt1.html')")
+    shinyjs::runjs("updateIframe4('updatingFigs/dt1.html')")
   }
   
   
@@ -374,8 +374,10 @@ function(input, output, session) {
     full_data <- full_join(full_data, clean_data)
     print(tail(full_data, 100))
     
+    write.csv(full_data, "www/updatingData/formatted_data.csv")
+    
     # # Run MLE to find learner type: output: "you fit the ___ model x% better than the ___ model"
-    source_python("../analysis/maximum_likelihood/LLerror.py")
+    source_python("www/LLerror.py")
 
     LL_data <- read.csv("../analysis/maximum_likelihood/LL_model1.csv", row.names = NULL)
     LL_data <- LL_data[-nrow(LL_data), -1]
@@ -385,12 +387,20 @@ function(input, output, session) {
     participant_ll <- LL_results[[1]]
     print(participant_ll)
     LL_data <- LL_results[[2]]
+    
+    write.csv(LL_data, "www/updatingData/LL_model1.csv")
 
     ## Final output -- use your participant code above to see how your results compare to other in the
     # interactive figures above!
-    learnerSummary <- paste0("You are a ", participant_ll[[10]], " learner! This model was ", exp(participant_ll[[11]]), " more likely to fit your data.")
+    if (participant_ll[[10]] == "Mediator") {
+      learnerSummary <- paste0("You are a <span style='color:#9b59b6;'>", participant_ll[[10]], " learner</span>! This model was ", exp(participant_ll[[11]]), "times more likely to fit your data.")
+    } else if (participant_ll[[10]] == "Elaborator") {
+      learnerSummary <- paste0("You are a <span style='color:#f39c12;'>", participant_ll[[10]], " learner</span>! This model was ", exp(participant_ll[[11]]), "times more likely to fit your data.")
+    }
     
-    output$learnerSummary <- renderText({learnerSummary})
+    output$learnerSummary <- renderText({
+      HTML(learnerSummary)
+      })
     
     
     #### FIRST FIGURE
@@ -563,84 +573,84 @@ function(input, output, session) {
   # Each plot refresh changes between two names to avoid caching issues
   observeEvent(reactiveValues$plot1, {
     # Define file paths
-    file_path1 <- "www/summary.html"
-    file_path2 <- "www/summary1.html"
+    file_path1 <- "www/updatingFigs/summary.html"
+    file_path2 <- "www/updatingFigs/summary1.html"
     
     # Determine which file to write to and which to delete
     if (file.exists(file_path1)) {
       # Save new plot to summary1.html and delete summary.html
       htmlwidgets::saveWidget(reactiveValues$plot1, file_path2, selfcontained = TRUE)
       file.remove(file_path1)
-      shinyjs::runjs("updateIframe1('summary1.html')")
+      shinyjs::runjs("updateIframe1('updatingFigs/summary1.html')")
     } else {
       # Save new plot to summary.html and delete summary1.html
       htmlwidgets::saveWidget(reactiveValues$plot1, file_path1, selfcontained = TRUE)
       if (file.exists(file_path2)) {
         file.remove(file_path2)
       }
-      shinyjs::runjs("updateIframe1('summary.html')")
+      shinyjs::runjs("updateIframe1('updatingFigs/summary.html')")
     }
   })
   
   observeEvent(reactiveValues$plot2, {
     # Define file paths
-    file_path1 <- "www/accuracy.html"
-    file_path2 <- "www/accuracy1.html"
+    file_path1 <- "www/updatingFigs/accuracy.html"
+    file_path2 <- "www/updatingFigs/accuracy1.html"
     
     # Determine which file to write to and which to delete
     if (file.exists(file_path1)) {
       # Save new plot to accuracy1.html and delete accuracy.html
       htmlwidgets::saveWidget(reactiveValues$plot2, file_path2, selfcontained = TRUE)
       file.remove(file_path1)
-      shinyjs::runjs("updateIframe2('accuracy1.html')")
+      shinyjs::runjs("updateIframe2('updatingFigs/accuracy1.html')")
     } else {
       # Save new plot to accuracy.html and delete accuracy1.html
       htmlwidgets::saveWidget(reactiveValues$plot2, file_path1, selfcontained = TRUE)
       if (file.exists(file_path2)) {
         file.remove(file_path2)
       }
-      shinyjs::runjs("updateIframe2('accuracy.html')")
+      shinyjs::runjs("updateIframe2('updatingFigs/accuracy.html')")
     }
   })
   
   observeEvent(reactiveValues$plot3, {
     # Define the file path
-    file_path1 <- "www/learner.html"
-    file_path2 <- "www/learner1.html"
+    file_path1 <- "www/updatingFigs/learner.html"
+    file_path2 <- "www/updatingFigs/learner1.html"
     
     # Determine which file to write to and which to delete
     if (file.exists(file_path1)) {
       # Save new plot to accuracy1.html and delete accuracy.html
       htmlwidgets::saveWidget(reactiveValues$plot3, file_path2, selfcontained = TRUE)
       file.remove(file_path1)
-      shinyjs::runjs("updateIframe3('learner1.html')")
+      shinyjs::runjs("updateIframe3('updatingFigs/learner1.html')")
     } else {
       # Save new plot to accuracy.html and delete accuracy1.html
       htmlwidgets::saveWidget(reactiveValues$plot3, file_path1, selfcontained = TRUE)
       if (file.exists(file_path2)) {
         file.remove(file_path2)
       }
-      shinyjs::runjs("updateIframe3('learner.html')")
+      shinyjs::runjs("updateIframe3('updatingFigs/learner.html')")
     }
   })
 
   observeEvent(reactiveValues$table, {
     # Define the file path
-    file_path1 <- "www/dt.html"
-    file_path2 <- "www/dt1.html"
+    file_path1 <- "www/updatingFigs/dt.html"
+    file_path2 <- "www/updatingFigs/dt1.html"
 
     # Determine which file to write to and which to delete
     if (file.exists(file_path1)) {
       htmlwidgets::saveWidget(reactiveValues$table, file_path2, selfcontained = TRUE)
       file.remove(file_path1)
-      shinyjs::runjs("updateIframe4('dt1.html')")
+      shinyjs::runjs("updateIframe4('updatingFigs/dt1.html')")
     } else {
       # Save new plot to accuracy.html and delete accuracy1.html
       htmlwidgets::saveWidget(reactiveValues$table, file_path1, selfcontained = TRUE)
       if (file.exists(file_path2)) {
         file.remove(file_path2)
       }
-      shinyjs::runjs("updateIframe4('dt.html')")
+      shinyjs::runjs("updateIframe4('updatingFigs/dt.html')")
     }
   })
   
