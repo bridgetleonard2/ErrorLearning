@@ -327,9 +327,10 @@ function(input, output, session) {
     print(paste("Study response time:", study_rt))
     
     ## Show Results
-    output$participantID <- renderText({paste0("Hi participant ", ppt_code, "! Let's review your results. To see how you
-                                               compare to the rest of our sample, view the interactive figures again.
-                                               Look for your specific code: ", ppt_code, " to see your own results in the table!")})
+    output$participantID <- renderText({
+      bold_ppt_code <- paste0("<b>", ppt_code, "</b>")
+      paste0("Hi participant ", bold_ppt_code, "! Let's review your results. To see how you compare to the rest of our sample, view the interactive figures again. Look for your specific code: ", bold_ppt_code, " to see your own results in the table!")
+    })
     output$accuracySummary <- renderText({accuracySummary})
     output$rtSummary <- renderText({rtSummary})
     
@@ -392,16 +393,18 @@ function(input, output, session) {
 
     ## Final output -- use your participant code above to see how your results compare to other in the
     # interactive figures above!
-    if (participant_ll[[10]] == "Mediator") {
-      learnerSummary <- paste0("You are a <span style='color:#9b59b6;'>", participant_ll[[10]], " learner</span>! This model was ", exp(participant_ll[[11]]), "times more likely to fit your data.")
-    } else if (participant_ll[[10]] == "Elaborator") {
-      learnerSummary <- paste0("You are a <span style='color:#f39c12;'>", participant_ll[[10]], " learner</span>! This model was ", exp(participant_ll[[11]]), "times more likely to fit your data.")
-    }
-    
-    output$learnerSummary <- renderText({
-      HTML(learnerSummary)
-      })
-    
+    output$learnerSummary <- renderUI({
+      learner_type <- participant_ll[[10]]
+      likelihood <- exp(participant_ll[[11]])
+      
+      if (learner_type == "Elaborator") {
+        styled_learner_type <- tags$span(style = "color:#f39c12;", learner_type)
+      } else {
+        styled_learner_type <- tags$span(style = "color:#9b59b6;", learner_type)
+      }
+      
+      paste("You are a", styled_learner_type, "learner! This model was", likelihood, "times more likely to fit your data.")
+    })
     
     #### FIRST FIGURE
     # RE-summarize data:
