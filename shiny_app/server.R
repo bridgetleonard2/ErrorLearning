@@ -84,10 +84,10 @@ function(input, output, session) {
   # Shuffle the word pairs
   word_pairs <- word_pairs[sample(nrow(word_pairs)), ]
   # word_pairs <- head(word_pairs, 10)
-  
-  # word_pairs <- word_pairs %>%
-  #   group_by(condition) %>%
-  #   slice_sample(n = 5)
+
+  word_pairs <- word_pairs %>%
+    group_by(condition) %>%
+    slice_sample(n = 5)
   
   responses <- reactiveValues(values = list())
   answers <- reactiveValues(values = list())
@@ -175,6 +175,9 @@ function(input, output, session) {
   
   
   observeEvent(input$answerObject, {
+    # Show the loading indicator
+    shinyjs::toggle("loading_message", condition = TRUE)
+    
     # Do something with the received responsesObject
     answers$values <- input$answerObject
     
@@ -227,9 +230,13 @@ function(input, output, session) {
       filter(stringdist(tolower(study_response), tolower(cue), method = "lv") < 3) %>% 
       pull(index)
     
+    na_response_d <- combined_data %>%
+      filter(condition == 1) %>% 
+      filter(is.na(study_response)) %>% 
+      pull(index)
     
-    if (length(na_response_a) != 0 | length(na_response_b) != 0 | length(na_response_c) != 0) {
-      remove <- c(na_response_a, na_response_b, na_response_c)
+    if (length(na_response_a) != 0 | length(na_response_b) != 0 | length(na_response_c) != 0 | length(na_response_d) != 0){
+      remove <- c(na_response_a, na_response_b, na_response_c, na_response_d)
       filtered_data <- combined_data %>%
         filter(!index %in% remove)
     } else{
@@ -327,9 +334,9 @@ function(input, output, session) {
     print(paste("Study response time:", study_rt))
     
     ## Show Results
-    output$participantID <- renderText({
+    output$participantID <- renderUI({
       bold_ppt_code <- paste0("<b>", ppt_code, "</b>")
-      paste0("Hi participant ", bold_ppt_code, "! Let's review your results. To see how you compare to the rest of our sample, view the interactive figures again. Look for your specific code: ", bold_ppt_code, " to see your own results in the table!")
+      HTML(paste0("Hi participant ", bold_ppt_code, "! Let's review your results. To see how you compare to the rest of our sample, view the interactive figures again. Look for your specific code: ", bold_ppt_code, " to see your own results in the table!"))
     })
     output$accuracySummary <- renderText({accuracySummary})
     output$rtSummary <- renderText({rtSummary})
@@ -398,13 +405,14 @@ function(input, output, session) {
       likelihood <- exp(participant_ll[[11]])
       
       if (learner_type == "Elaborator") {
-        styled_learner_type <- tags$span(style = "color:#f39c12;", learner_type)
+        styled_learner_type <- tags$span(style = "color:#f39c12;", as.character(learner_type))
       } else {
-        styled_learner_type <- tags$span(style = "color:#9b59b6;", learner_type)
+        styled_learner_type <- tags$span(style = "color:#9b59b6;", as.character(learner_type))
       }
       
-      paste("You are a", styled_learner_type, "learner! This model was", likelihood, "times more likely to fit your data.")
+      HTML(paste("You are a", styled_learner_type, "learner! This model was", as.character(round(likelihood)), "times more likely to fit your data."))
     })
+    
     
     #### FIRST FIGURE
     # RE-summarize data:
@@ -521,56 +529,59 @@ function(input, output, session) {
       )
 
     reactiveValues$plot3 <- learner_plot
+    
+    ## TABLE
+    #Create datatable
+    clean_ll <- LL_data %>%
+      dplyr::select(Participant, elab.LL, med.LL, diff.LL, best.model) %>%
+      rename('Elaborative Score' = 'elab.LL', 'Mediator Score' = 'med.LL',
+             'Score Difference' = 'diff.LL', 'Model' = 'best.model')
+
+    med_elab_formatter <-
+      formatter("span",
+                style = x ~ formattable::style(
+                  font.weight = "bold",
+                  color = ifelse(x == 'Mediator', "#9b59b6", ifelse(x == 'Elaborative', "#f39c12", "white")
+                )
+                ))
+
+    datatable_ll <- formattable(clean_ll,
+                                list(
+                                  'Score Difference' = color_tile("#f7c46c", "#b984cc"),
+                                  'Model' = med_elab_formatter
+                                )) %>%
+      as.datatable(options = list(
+        initComplete = JS(
+          "function(settings, json) {",
+          "$('body').css({'font-family': 'Calibri'});",
+          "}"
+        ),
+        paging = TRUE,    ## paginate the output
+        pageLength = 15,  ## number of rows to output for each page
+        scrollX = TRUE,   ## enable scrolling on X axis
+        scrollY = TRUE,   ## enable scrolling on Y axis
+        autoWidth = TRUE, ## use smart column width handling
+        server = FALSE,   ## use client-side processing
+        dom = 'Bfrtip',
+        buttons = c('csv', 'excel')),
+        extensions = 'Buttons',
+        selection = 'single', ## enable selection of a single row
+        filter = 'bottom',              ## include column filters at the bottom
+        rownames = FALSE                ## don't show row numbers/names
+      )
+
+    # title <- tags$caption(
+    #   style = "caption-side: top; font-size: 18px; font-weight: bold; margin-bottom: 10px;",
+    #   "My Formattable Datatable"
+    # )
+
+    # # Combine the title and the datatable using htmltools::tagList
+    # datatable_ll <- htmltools::tagList(title, datatable_ll)
+
+    reactiveValues$table <- datatable_ll
       
-      ## TABLE
-      #Create datatable
-      clean_ll <- LL_data %>%
-        dplyr::select(Participant, elab.LL, med.LL, diff.LL, best.model) %>%
-        rename('Elaborative Score' = 'elab.LL', 'Mediator Score' = 'med.LL',
-               'Score Difference' = 'diff.LL', 'Model' = 'best.model')
-
-      med_elab_formatter <-
-        formatter("span",
-                  style = x ~ formattable::style(
-                    font.weight = "bold",
-                    color = ifelse(x == 'Mediator', "#9b59b6", ifelse(x == 'Elaborative', "#f39c12", "white")
-                  )
-                  ))
-
-      datatable_ll <- formattable(clean_ll,
-                                  list(
-                                    'Score Difference' = color_tile("#f7c46c", "#b984cc"),
-                                    'Model' = med_elab_formatter
-                                  )) %>%
-        as.datatable(options = list(
-          initComplete = JS(
-            "function(settings, json) {",
-            "$('body').css({'font-family': 'Calibri'});",
-            "}"
-          ),
-          paging = TRUE,    ## paginate the output
-          pageLength = 15,  ## number of rows to output for each page
-          scrollX = TRUE,   ## enable scrolling on X axis
-          scrollY = TRUE,   ## enable scrolling on Y axis
-          autoWidth = TRUE, ## use smart column width handling
-          server = FALSE,   ## use client-side processing
-          dom = 'Bfrtip',
-          buttons = c('csv', 'excel')),
-          extensions = 'Buttons',
-          selection = 'single', ## enable selection of a single row
-          filter = 'bottom',              ## include column filters at the bottom
-          rownames = FALSE                ## don't show row numbers/names
-        )
-
-      # title <- tags$caption(
-      #   style = "caption-side: top; font-size: 18px; font-weight: bold; margin-bottom: 10px;",
-      #   "My Formattable Datatable"
-      # )
-
-      # # Combine the title and the datatable using htmltools::tagList
-      # datatable_ll <- htmltools::tagList(title, datatable_ll)
-
-      reactiveValues$table <- datatable_ll
+    # After the analysis is done, hide the loading indicator
+    shinyjs::toggle("loading_message", condition = FALSE)
   })
   
   # Each plot refresh changes between two names to avoid caching issues

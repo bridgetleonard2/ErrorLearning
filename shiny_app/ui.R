@@ -43,8 +43,11 @@ fluidPage(
     )
   ),
   mainPanel(
+      # Loading message (initially hidden)
+      div(id = "loading_message", style = "display: none; color: #3498db;",
+          h3("Loading results...")),
       div(
-        textOutput("participantID"), 
+        uiOutput("participantID"), 
         style = "font-size: 20px; margin-bottom: 10px;"
       ),
       div(
@@ -56,7 +59,7 @@ fluidPage(
         style = "font-size: 20px; margin-bottom: 10px;"
       ),
       div(
-        textOutput("learnerSummary"), 
+       uiOutput("learnerSummary"), 
         style = "font-size: 20px; margin-bottom: 10px;"
       ),
       div(plotOutput("plotSummary"), style = "margin-top: 30px; padding: 10px;")

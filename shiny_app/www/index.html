@@ -125,9 +125,10 @@
     }
     
     .responsive-image {
-      width: auto; /* Sets the width of the image to 100% of its container */
-      height: 100%; /* Allows the height to adjust proportionally based on the width */
+      max-width: 100%; /* Set maximum width to prevent image from overflowing its container */
+      height: auto; /* Allow the height to adjust proportionally based on the width */
     }
+
 
     #content {
       padding-top: 60px; /* Adjusted based on navbar height */
@@ -160,10 +161,16 @@
     
     h3 {
       font-size: 20px;
+      margin-bottom: 20px;
+      margin-top: 20px;
     }
 
     .title-section {
       text-align: center;
+    }
+    
+    .section {
+      height: auto;
     }
     
     .section h2 {
@@ -186,8 +193,8 @@
     }
 
     .section2-image img {
-      width: 100%;
-      height: auto;
+      width: auto;
+      height: 100%;
     }
     
     .definition-container {
@@ -323,8 +330,7 @@
       </div>
       <h3>Mixed Linear Models</h3>
       <div class="row">
-          <div class="col-md-6 slide-in" id="rightText">
-            <p><br></p>
+          <div class="col-md-6 slide-in" id="leftText">
             <p>Mixed linear models capture both fixed effects and random effects that influence accuracy and response time. Here we used condition (study or error trial) as a fixed effect and a participant-level intercept to capture individual differences in baseline response times and accuracies. Our accuracy model found that people learn <strong>better</strong> from errors with <strong>increased</strong> response times on these error trials.</p> 
             <p>Code for these models can be found in <pre class="highlight-box">analysis/behavioral_analysis.Rmd</pre></p>
           </div>
@@ -332,18 +338,17 @@
             <img src="MLM.png" class="responsive-image">
           </div>
         </div>
-      <h3>ACT-R & Maximum Likelihood Estimation</h3>
-        <div class="row">
-          <div class="col-md-6 slide-in" id="MLE-visual">
-            <p><br></p>
-            <img src="MLE.png" class="responsive-image">
-          </div>
-          <div class="col-md-6 slide-in" id="leftText">
-            <p>Mixed linear models cannot capture all the dynamics of memory we are interested. In Python, we implemented a version of the ACT-R cognitive architecture which can closely model human memory and behavior to generate realistic model representations of both the elaborative and mediator theories.</p> 
-            <p>We then used optimization techniques to uniquely fit model parameters to each participant. Then, we were able to walk through each trial of the test and calculate the maximum likelihood that each model produced the given response and response time. In this way, we were able to sum all these likelihoods together to calculate the maximum likelihood of each model's fit to each participant's data!</p> 
-            <p>Code for these models can be found in <pre class="highlight-box">maximum_likelihood/LLerror.py</pre></p>
-          </div>
+     <h3>ACT-R & Maximum Likelihood Estimation</h3>
+      <div class="row">
+        <div class="col-md-6 slide-in" id="MLE-visual">
+          <img src="MLE.png" class="responsive-image">
         </div>
+        <div class="col-md-6 slide-in" id="rightText">
+          <p>Mixed linear models cannot capture all the dynamics of memory we are interested. In Python, we implemented a version of the ACT-R cognitive architecture which can closely model human memory and behavior to generate realistic model representations of both the elaborative and mediator theories.</p> 
+          <p>We then used optimization techniques to uniquely fit model parameters to each participant. Then, we were able to walk through each trial of the test and calculate the maximum likelihood that each model produced the given response and response time. In this way, we were able to sum all these likelihoods together to calculate the maximum likelihood of each model's fit to each participant's data!</p> 
+          <p>Code for these models can be found in <pre class="highlight-box">maximum_likelihood/LLerror.py</pre></p>
+        </div>
+      </div>
     </div>
 
     <div id="section3" class="section">
