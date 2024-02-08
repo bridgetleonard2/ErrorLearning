@@ -85,9 +85,9 @@ function(input, output, session) {
   word_pairs <- word_pairs[sample(nrow(word_pairs)), ]
   # word_pairs <- head(word_pairs, 10)
 
-  word_pairs <- word_pairs %>%
-    group_by(condition) %>%
-    slice_sample(n = 5)
+  # word_pairs <- word_pairs %>%
+  #   group_by(condition) %>%
+  #   slice_sample(n = 5)
   
   responses <- reactiveValues(values = list())
   answers <- reactiveValues(values = list())
@@ -227,7 +227,7 @@ function(input, output, session) {
     
     na_response_c <- combined_data %>%
       filter(condition == 1) %>% 
-      filter(stringdist(tolower(study_response), tolower(cue), method = "lv") < 3) %>% 
+      filter(stringdist(tolower(study_response), tolower(cue), method = "lv") < 1) %>% 
       pull(index)
     
     na_response_d <- combined_data %>%
@@ -252,7 +252,7 @@ function(input, output, session) {
       ## - use stringdist to check typos
       correct_guess <- filtered_data %>% 
         filter(condition == 1) %>% 
-        filter(stringdist(tolower(study_response), tolower(target), method = "lv") < 3) %>% 
+        filter(stringdist(tolower(study_response), tolower(target), method = "lv") < 1) %>% 
         pull(index)
       
       clean_data <- filtered_data %>% 
