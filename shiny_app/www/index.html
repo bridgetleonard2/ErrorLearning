@@ -164,7 +164,15 @@
       margin-bottom: 20px;
       margin-top: 20px;
     }
-
+    
+    
+    h4 {
+      font-size: 18px;
+      margin-bottom: 20px;
+      margin-top: 20px;
+      text-align: center;
+    }
+    
     .title-section {
       text-align: center;
     }
@@ -328,6 +336,25 @@
       <div id="button-task" class="container">
         <button class="button" data-target="section3" onclick="scrollToSection('section3')">Try it yourself!</button>
       </div>
+      <h3>Learner Type</h3>
+      <div class="row">
+          <div class="col-md-6 slide-in mb-4" id="leftText">
+            <div class = "card bg-light rounded-3">
+              <div class = "card-body">
+                <h4>Elaborative</h4>
+                <p>If you are an <span style="color: #f39c12;">elaborative learner</span>, generating errors activates many items related to the question and answer in your mind. Activating this semantic network allows you to encode the correct answer in a more meaningful way. Maybe you make a little story in your mind that helps you remember the answer in the future!</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 slide-in mb-4" id="MLM-visual">
+            <div class = "card bg-light rounded-3">
+              <div class = "card-body">
+                <h4>Mediator</h4>
+                <p>If you are a <span style="color: #9b59b6;">mediator learner</span>, you learn from errors by remembering the error itself. When you see a question you got wrong, you might first remember your error and use it with the question to remember the correct answer. It's like when you're about to repeat your mistake, then catch yourself, and quickly remember what's right!</p>
+              </div>
+            </div>
+          </div>
+          
       <h3>Mixed Linear Models</h3>
       <div class="row">
           <div class="col-md-6 slide-in" id="leftText">

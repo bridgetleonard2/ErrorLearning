@@ -22,13 +22,20 @@ library(htmltools)
 
 library(plotly)
 
-use_python("C:\\Users\\Bridget Leonard\\AppData\\Local\\Programs\\Python\\Python312")
-
-
+# reticulate::py_install("numpy")
+# reticulate::py_install("scipy")
+# reticulate::py_install("pandas")
+# 
+# # Import packages
+# numpy <- import("numpy")
+# scipy <- import("scipy")
+# pandas <- import("pandas")
+# math <- import("math")
 
 # Define server logic required to draw a histogram
 # Define server logic required to draw a histogram
 function(input, output, session) {
+  
   # Initialize shinyjs to ensure that shinyjs functions are available
   shinyjs::useShinyjs()
   
@@ -60,8 +67,6 @@ function(input, output, session) {
   } else {
     shinyjs::runjs("updateIframe4('updatingFigs/dt1.html')")
   }
-  
-  
   
     
   word_pairs <- data.frame(
@@ -135,7 +140,7 @@ function(input, output, session) {
     responses_data(responses_current)
     # Clear last word pair and start timer
     shinyjs::runjs(sprintf("shinyjs.updateWordPair('%s', '%s', %d)", "", "", 2))
-    shinyjs::runjs("startTimer(5);") #########################
+    shinyjs::runjs("startTimer(300);") #########################
     # You can process or analyze the responses here
   })
   
@@ -199,7 +204,7 @@ function(input, output, session) {
     responses_current <- responses_data()
     
     ### DATA ANALYSIS STARTS HERE
-    full_data <- read.csv('../data/formatted_data.csv')
+    full_data <- read.csv('www/updatingData/formatted_data.csv') ###########
     ppt_code <- (max(full_data$participant, na.rm = TRUE) + 1)
     
     # You can process or analyze the responses here
@@ -384,10 +389,21 @@ function(input, output, session) {
     
     write.csv(full_data, "www/updatingData/formatted_data.csv")
     
+    reticulate::py_install("numpy")
+    reticulate::py_install("scipy")
+    reticulate::py_install("pandas")
+    
+    # Import packages
+    numpy <- import("numpy")
+    scipy <- import("scipy")
+    pandas <- import("pandas")
+    math <- import("math")
+    
+    
     # # Run MLE to find learner type: output: "you fit the ___ model x% better than the ___ model"
     source_python("www/LLerror.py")
 
-    LL_data <- read.csv("../analysis/maximum_likelihood/LL_model1.csv", row.names = NULL)
+    LL_data <- read.csv("www/updatingData/LL_model1.csv", row.names = NULL) ##############
     LL_data <- LL_data[-nrow(LL_data), -1]
     
     LL_results <- ll_participant(clean_data, ppt_code, LL_data)
@@ -404,7 +420,7 @@ function(input, output, session) {
       learner_type <- participant_ll[[10]]
       likelihood <- exp(participant_ll[[11]])
       
-      if (learner_type == "Elaborator") {
+      if (learner_type == "Elaborative") {
         styled_learner_type <- tags$span(style = "color:#f39c12;", as.character(learner_type))
       } else {
         styled_learner_type <- tags$span(style = "color:#9b59b6;", as.character(learner_type))
