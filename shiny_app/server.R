@@ -21,6 +21,9 @@ library(DT)
 library(htmltools)
 
 library(plotly)
+library(googlesheets4)
+
+gs4_auth(path = ".secrets/client_secret.json")
 
 # reticulate::py_install("numpy")
 # reticulate::py_install("scipy")
@@ -412,28 +415,38 @@ function(input, output, session) {
     # Append new results
     ## remove index column and add participant
     if (acquire_lock(lock_file)) {
-      full_data <- read.csv('www/updatingData/formatted_data.csv') ###########
+      # full_data <- read.csv('www/updatingData/formatted_data.csv') ###########
+      full_data <- read_sheet("1pmeYWRJTQvIRFRzK4PjgB83DypA-XXtea_pj1a13WDo") ###########
+      
       ppt_code <- (max(full_data$participant, na.rm = TRUE) + 1)
       
       clean_data$index <- NULL
       clean_data$participant <- ppt_code
       
       
-      full_data <- full_join(full_data, clean_data)
-      print(tail(full_data, 100))
+      # full_data <- full_join(full_data, clean_data)
+      # print(tail(full_data, 100))
       
-      write.csv(full_data, "www/updatingData/formatted_data.csv")
+      # write.csv(full_data, "www/updatingData/formatted_data.csv")
+      sheet_append("1pmeYWRJTQvIRFRzK4PjgB83DypA-XXtea_pj1a13WDo", clean_data)
       
-      LL_data <- read.csv("www/updatingData/LL_model1.csv", row.names = NULL) ##############
-      LL_data <- LL_data[-nrow(LL_data), -1]
+      # LL_data <- read.csv("www/updatingData/LL_model1.csv", row.names = NULL) ##############
+      LL_data <- read_sheet("1doyHkRu2NTgrlOA6OoTN8RRXkfZDxIkK1fX72VWxhBU") #############
+      # LL_data <- LL_data[-nrow(LL_data), -1]
       
       LL_results <- ll_participant(clean_data, ppt_code, LL_data)
   
       participant_ll <- LL_results[[1]]
-      print(participant_ll)
-      LL_data <- LL_results[[2]]
+      column_names <- c("Participant", "elab.decay", "elab.temp", "elab.ter", "elab.LL", "med.decay", "med.temp", "med.ter", "med.LL", "best.model", "diff.LL")
       
-      write.csv(LL_data, "www/updatingData/LL_model1.csv")
+      ppt_ll_df <- data.frame(matrix(unlist(participant_ll), nrow = 1, byrow = TRUE))
+      colnames(ppt_ll_df) <- column_names
+      
+      print(ppt_ll_df)
+      # LL_data <- LL_results[[2]]
+      
+      #write.csv(LL_data, "www/updatingData/LL_model1.csv")
+      sheet_append("1doyHkRu2NTgrlOA6OoTN8RRXkfZDxIkK1fX72VWxhBU", ppt_ll_df)
       
       # Release the lock
       release_lock(lock_file)
