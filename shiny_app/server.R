@@ -68,7 +68,24 @@ function(input, output, session) {
     shinyjs::runjs("updateIframe4('updatingFigs/dt1.html')")
   }
   
-    
+  lock_file <- "lock_file.lock"
+  
+  # Function to acquire a lock
+  acquire_lock <- function(lock_file) {
+    while(file.exists(lock_file)) {
+      Sys.sleep(0.1)  # Wait for a short interval before trying again
+    }
+    file.create(lock_file)
+    return(TRUE)
+  }
+  
+  # Function to release a lock
+  release_lock <- function(lock_file) {
+    if (file.exists(lock_file)) {
+      file.remove(lock_file)
+    }
+  }
+  
   word_pairs <- data.frame(
     cue = c("PORTRAY", "PRESCRIPTION", "PARCEL", "CANYON", "LATIN", "STERN", "DRACULA", "ROBIN", "WELL", "INTRODUCE",
             "GLIDE", "ORDER", "COURAGEOUS", "HONEYMOON", "LAUNDRY", "MEASUREMENT", "DANCER", "FUGITIVE", "CHIMNEY", "EYES",
@@ -90,9 +107,9 @@ function(input, output, session) {
   word_pairs <- word_pairs[sample(nrow(word_pairs)), ]
   # word_pairs <- head(word_pairs, 10)
 
-  # word_pairs <- word_pairs %>%
-  #   group_by(condition) %>%
-  #   slice_sample(n = 5)
+  word_pairs <- word_pairs %>%
+    group_by(condition) %>%
+    slice_sample(n = 5)
   
   responses <- reactiveValues(values = list())
   answers <- reactiveValues(values = list())
@@ -140,7 +157,7 @@ function(input, output, session) {
     responses_data(responses_current)
     # Clear last word pair and start timer
     shinyjs::runjs(sprintf("shinyjs.updateWordPair('%s', '%s', %d)", "", "", 2))
-    shinyjs::runjs("startTimer(300);") #########################
+    shinyjs::runjs("startTimer(5);") #########################
     # You can process or analyze the responses here
   })
   
@@ -204,8 +221,8 @@ function(input, output, session) {
     responses_current <- responses_data()
     
     ### DATA ANALYSIS STARTS HERE
-    full_data <- read.csv('www/updatingData/formatted_data.csv') ###########
-    ppt_code <- (max(full_data$participant, na.rm = TRUE) + 1)
+    # full_data <- read.csv('www/updatingData/formatted_data.csv') ###########
+    # ppt_code <- (max(full_data$participant, na.rm = TRUE) + 1)
     
     # You can process or analyze the responses here
     combined_data <- merge(responses_current, answers_current, by = c("cue", "target", "condition"), all = TRUE)
@@ -250,7 +267,7 @@ function(input, output, session) {
     
     # 2) Miss <10 guesses -- includes misses that were calculated as NA in step 1
     ## - This is where a participant may be excluded and prompted to try again
-    if (nrow(filtered_data) < (nrow(word_pairs) - 10)) { ###################
+    if (nrow(filtered_data) < (nrow(word_pairs) - 50)) { ###################
       print("Not enough data due to...")
     } else {
       # 3) Remove items with correct guess
@@ -378,17 +395,7 @@ function(input, output, session) {
       grid.arrange(p1, p2, ncol = 2)
     }, width = 800, height = 400)
     
-    # Append new results
-    ## remove index column and add participant
-    clean_data$index <- NULL
-    clean_data$participant <- ppt_code
-    
-    
-    full_data <- full_join(full_data, clean_data)
-    print(tail(full_data, 100))
-    
-    write.csv(full_data, "www/updatingData/formatted_data.csv")
-    
+    ## PYTHON
     reticulate::py_install("numpy")
     reticulate::py_install("scipy")
     reticulate::py_install("pandas")
@@ -399,20 +406,40 @@ function(input, output, session) {
     pandas <- import("pandas")
     math <- import("math")
     
-    
     # # Run MLE to find learner type: output: "you fit the ___ model x% better than the ___ model"
     source_python("www/LLerror.py")
-
-    LL_data <- read.csv("www/updatingData/LL_model1.csv", row.names = NULL) ##############
-    LL_data <- LL_data[-nrow(LL_data), -1]
     
-    LL_results <- ll_participant(clean_data, ppt_code, LL_data)
-
-    participant_ll <- LL_results[[1]]
-    print(participant_ll)
-    LL_data <- LL_results[[2]]
-    
-    write.csv(LL_data, "www/updatingData/LL_model1.csv")
+    # Append new results
+    ## remove index column and add participant
+    if (acquire_lock(lock_file)) {
+      full_data <- read.csv('www/updatingData/formatted_data.csv') ###########
+      ppt_code <- (max(full_data$participant, na.rm = TRUE) + 1)
+      
+      clean_data$index <- NULL
+      clean_data$participant <- ppt_code
+      
+      
+      full_data <- full_join(full_data, clean_data)
+      print(tail(full_data, 100))
+      
+      write.csv(full_data, "www/updatingData/formatted_data.csv")
+      
+      LL_data <- read.csv("www/updatingData/LL_model1.csv", row.names = NULL) ##############
+      LL_data <- LL_data[-nrow(LL_data), -1]
+      
+      LL_results <- ll_participant(clean_data, ppt_code, LL_data)
+  
+      participant_ll <- LL_results[[1]]
+      print(participant_ll)
+      LL_data <- LL_results[[2]]
+      
+      write.csv(LL_data, "www/updatingData/LL_model1.csv")
+      
+      # Release the lock
+      release_lock(lock_file)
+    } else {
+      print("another process occuring, longer wait times may occur")
+    }
 
     ## Final output -- use your participant code above to see how your results compare to other in the
     # interactive figures above!
