@@ -45,6 +45,12 @@ function(input, output, session) {
   # Define a reactiveValues object to store the plot
   reactiveValues <- reactiveValues(plot1 = NULL, plot2 = NULL, plot3 = NULL, table = NULL)
   
+  reactiveData <- reactiveValues(full_data = NULL, LL_data = NULL)
+  
+  reactiveData$full_data <- read_sheet("1pmeYWRJTQvIRFRzK4PjgB83DypA-XXtea_pj1a13WDo") ###########
+  reactiveData$LL_data <- read_sheet("1doyHkRu2NTgrlOA6OoTN8RRXkfZDxIkK1fX72VWxhBU") #############
+  
+  
   # # Find current plot values
   # # Determine which file to write to and which to delete
   # if (file.exists("www/updatingFigs/summary.html")) {
@@ -71,72 +77,72 @@ function(input, output, session) {
   #   shinyjs::runjs("updateIframe4('updatingFigs/dt1.html')")
   # }
   
-  # Define function to find the most recent version of a file
-  find_recent_version <- function(base_path) {
-    max_version <- 0
-    for (i in 0:1000) {  # Assume max 1000 versions
-      if (i == 0) {
-        file_path <- paste0("www/", base_path, ".html")
-      } else {
-        file_path <- paste0("www/", base_path, i, ".html")
-      }
-      if (file.exists(file_path)) {
-        max_version <- i
-      } else {
-        break
-      }
-    }
-    return(max_version)
-  }
-  
-  # Function to update iframe based on file name
-  update_iframe <- function(iframe_id, file_path_base) {
-    most_recent_version <- find_recent_version(file_path_base)
-    if (most_recent_version == 0) {
-      file_path <- paste0(file_path_base, ".html")
-    } else {
-      file_path <- paste0(file_path_base, most_recent_version, ".html")
-    }
-    shinyjs::runjs(paste0("updateIframe", iframe_id, "('", file_path, "')"))
-  }
-  
-  # Define function to save plot and update iframe
-  save_and_update_iframe <- function(reactive_value, file_path_base) {
-    most_recent_version <- find_recent_version(file_path_base)
-    new_version <- most_recent_version + 1
-    current_file_path <- paste0(file_path_base, ".html")
-    new_file_path <- paste0(file_path_base, new_version, ".html")
-    
-    htmlwidgets::saveWidget(reactive_value, new_file_path, selfcontained = TRUE)
-    if (file.exists(current_file_path)) {
-      file.remove(current_file_path)
-    }
-    
-    update_iframe(iframe_id = new_version %% 4 + 1, file_path_base)
-  }
-  
-  # Observers for each plot
-  observeEvent(reactiveValues$plot1, {
-    save_and_update_iframe(reactiveValues$plot1, "www/updatingFigs/summary")
-  })
-  
-  observeEvent(reactiveValues$plot2, {
-    save_and_update_iframe(reactiveValues$plot2, "www/updatingFigs/accuracy")
-  })
-  
-  observeEvent(reactiveValues$plot3, {
-    save_and_update_iframe(reactiveValues$plot3, "www/updatingFigs/learner")
-  })
-  
-  observeEvent(reactiveValues$table, {
-    save_and_update_iframe(reactiveValues$table, "www/updatingFigs/dt")
-  })
-  
-  # update plots:
-  update_iframe(1, "updatingFigs/summary")
-  update_iframe(2, "updatingFigs/accuracy")
-  update_iframe(3, "updatingFigs/learner")
-  update_iframe(4, "updatingFigs/dt")
+  # # Define function to find the most recent version of a file
+  # find_recent_version <- function(base_path) {
+  #   max_version <- 0
+  #   for (i in 0:1000) {  # Assume max 1000 versions
+  #     if (i == 0) {
+  #       file_path <- paste0("www/", base_path, ".html")
+  #     } else {
+  #       file_path <- paste0("www/", base_path, i, ".html")
+  #     }
+  #     if (file.exists(file_path)) {
+  #       max_version <- i
+  #     } else {
+  #       break
+  #     }
+  #   }
+  #   return(max_version)
+  # }
+  # 
+  # # Function to update iframe based on file name
+  # update_iframe <- function(iframe_id, file_path_base) {
+  #   most_recent_version <- find_recent_version(file_path_base)
+  #   if (most_recent_version == 0) {
+  #     file_path <- paste0(file_path_base, ".html")
+  #   } else {
+  #     file_path <- paste0(file_path_base, most_recent_version, ".html")
+  #   }
+  #   shinyjs::runjs(paste0("updateIframe", iframe_id, "('", file_path, "')"))
+  # }
+  # 
+  # # Define function to save plot and update iframe
+  # save_and_update_iframe <- function(reactive_value, file_path_base) {
+  #   most_recent_version <- find_recent_version(file_path_base)
+  #   new_version <- most_recent_version + 1
+  #   current_file_path <- paste0(file_path_base, ".html")
+  #   new_file_path <- paste0(file_path_base, new_version, ".html")
+  #   
+  #   htmlwidgets::saveWidget(reactive_value, new_file_path, selfcontained = TRUE)
+  #   if (file.exists(current_file_path)) {
+  #     file.remove(current_file_path)
+  #   }
+  #   
+  #   update_iframe(iframe_id = new_version %% 4 + 1, file_path_base)
+  # }
+  # 
+  # # Observers for each plot
+  # observeEvent(reactiveValues$plot1, {
+  #   save_and_update_iframe(reactiveValues$plot1, "www/updatingFigs/summary")
+  # })
+  # 
+  # observeEvent(reactiveValues$plot2, {
+  #   save_and_update_iframe(reactiveValues$plot2, "www/updatingFigs/accuracy")
+  # })
+  # 
+  # observeEvent(reactiveValues$plot3, {
+  #   save_and_update_iframe(reactiveValues$plot3, "www/updatingFigs/learner")
+  # })
+  # 
+  # observeEvent(reactiveValues$table, {
+  #   save_and_update_iframe(reactiveValues$table, "www/updatingFigs/dt")
+  # })
+  # 
+  # # update plots:
+  # update_iframe(1, "updatingFigs/summary")
+  # update_iframe(2, "updatingFigs/accuracy")
+  # update_iframe(3, "updatingFigs/learner")
+  # update_iframe(4, "updatingFigs/dt")
   
   lock_file <- "lock_file.lock"
   
@@ -483,8 +489,9 @@ function(input, output, session) {
     ## remove index column and add participant
     if (acquire_lock(lock_file)) {
       # full_data <- read.csv('www/updatingData/formatted_data.csv') ###########
-      full_data <- read_sheet("1pmeYWRJTQvIRFRzK4PjgB83DypA-XXtea_pj1a13WDo") ###########
+      reactiveData$full_data <- read_sheet("1pmeYWRJTQvIRFRzK4PjgB83DypA-XXtea_pj1a13WDo") ###########
       
+      full_data <- reactiveData$full_data
       ppt_code <- (max(full_data$participant, na.rm = TRUE) + 1)
       
       clean_data$index <- NULL
@@ -496,9 +503,11 @@ function(input, output, session) {
       
       # write.csv(full_data, "www/updatingData/formatted_data.csv")
       sheet_append("1pmeYWRJTQvIRFRzK4PjgB83DypA-XXtea_pj1a13WDo", clean_data)
+      reactiveData$full_data <- read_sheet("1pmeYWRJTQvIRFRzK4PjgB83DypA-XXtea_pj1a13WDo") ###########
       
       # LL_data <- read.csv("www/updatingData/LL_model1.csv", row.names = NULL) ##############
-      LL_data <- read_sheet("1doyHkRu2NTgrlOA6OoTN8RRXkfZDxIkK1fX72VWxhBU") #############
+      reactiveData$LL_data <- read_sheet("1doyHkRu2NTgrlOA6OoTN8RRXkfZDxIkK1fX72VWxhBU") #############
+      LL_data <- reactiveData$LL_data
       # LL_data <- LL_data[-nrow(LL_data), -1]
       
       LL_results <- ll_participant(clean_data, ppt_code, LL_data)
@@ -514,6 +523,7 @@ function(input, output, session) {
       
       #write.csv(LL_data, "www/updatingData/LL_model1.csv")
       sheet_append("1doyHkRu2NTgrlOA6OoTN8RRXkfZDxIkK1fX72VWxhBU", ppt_ll_df)
+      reactiveData$LL_data <- read_sheet("1doyHkRu2NTgrlOA6OoTN8RRXkfZDxIkK1fX72VWxhBU") #############
       
       # Release the lock
       release_lock(lock_file)
@@ -537,8 +547,177 @@ function(input, output, session) {
     })
     
     
-    #### FIRST FIGURE
-    # RE-summarize data:
+    # #### FIRST FIGURE
+    # # RE-summarize data:
+    # cleandata_participant <- full_data %>% 
+    #   group_by(participant, condition) %>% 
+    #   summarize(
+    #     performance = (sum(correct) / n())
+    #   )
+    # 
+    # print(cleandata_participant)
+    # 
+    # cleandata_summary <- cleandata_participant %>% 
+    #   group_by(condition) %>% 
+    #   summarize(
+    #     mean_performance = mean(performance),
+    #     sd_performance = sd(performance),
+    #     n = n(),
+    #     stError = sd_performance / sqrt(n)
+    #   )
+    # 
+    # # Update figures
+    # summary_plot <- plot_ly(data = cleandata_participant, x = ~condition, y = ~performance) %>%
+    #   add_markers(alpha = 0.75, color = I("#D9D6C7"), split = ~participant, marker = list(size=5),
+    #               text = ~performance,
+    #               textposition = "auto",
+    #               hoverinfo = "text",
+    #               hovertext = ~paste0("Participant: ", participant,
+    #                                   "<br> Observed Accuracy: ", round(performance*100, 2), "%"),
+    #               showlegend=FALSE) %>% 
+    #   add_lines(color = I("#D9D6C7"), line = list(width = 0.3), split = ~participant,
+    #             showlegend=FALSE) %>%
+    #   add_markers(data = cleandata_summary %>%  filter(condition== 1), x = ~condition, y = ~mean_performance, error_y = list(type= "data", array = ~stError,color = '#e74c3c', thickness=2), type = "scatter", mode = "markers", marker = list(color = "#e74c3c", size = 12), legendgroup="average",
+    #               name="Average - Error", showlegend=FALSE) %>% 
+    #   add_markers(data = cleandata_summary %>%  filter(condition==2), x = ~condition, y = ~mean_performance, error_y = list(type= "data", array = ~stError,color = '#2ecc71', thickness=2), type = "scatter", mode = "markers", marker = list(color = "#2ecc71", size = 12), legendgroup="average",
+    #               name="Average - Study", showlegend=FALSE) %>% 
+    #   add_text(data = cleandata_summary %>% filter(condition == 1), x = ~condition, y = ~mean_performance, text = ~paste0(round(mean_performance * 100, 2), "%"), textposition = "bottom right", textfont=list(color = c("#000000"), size = 17), legendgroup="average",
+    #            name="Average - Error", showlegend=FALSE) %>%
+    #   add_text(data = cleandata_summary %>% filter(condition == 2), x = ~condition, y = ~mean_performance, text = ~paste0(round(mean_performance * 100, 2), "%"), textposition = "bottom right", textfont=list(color = c("#000000"), size = 17), legendgroup="average",
+    #            name="Average - Study", showlegend=FALSE) %>%
+    #   style(textposition = "top right") %>%
+    #   layout(
+    #     title = list(text= "Performance Overview", size = "3vmin"),
+    #     xaxis = list(title = "Condition", autotypenumbers = "strict", range = c(0.5, 2.5), ticktext = list("Error Items", "Study Items"),
+    #                  tickvals = list(1, 2),
+    #                  tickmode = "array",
+    #                  titlefont = list(size = "2.5vmin")),
+    #     yaxis = list(title = "Accuracy",
+    #                  titlefont = list(size = "2.5vmin")),
+    #     showlegend = FALSE,
+    #     hovermode = "closest"
+    #   )
+    # reactiveValues$plot1 <- summary_plot
+    # 
+    # 
+    # ### SECOND FIGURE
+    # learner_data <- cleandata_participant %>%
+    #   mutate(condition = case_when(condition == 1 ~ 'error', condition == 2 ~ 'study')) %>%
+    #   pivot_wider(names_from = condition, values_from = performance) %>%
+    #   group_by(participant) %>%
+    #   summarize(accuracy_diff = error - study) %>%
+    #   mutate(Learner = case_when(accuracy_diff > 0 ~ 'Error Items', accuracy_diff <= 0 ~ 'Study Items'))
+    # 
+    # error_better <- learner_data %>%
+    #   group_by(Learner) %>%
+    #   summarize(count = n())
+    # 
+    # colors = c("#e74c3c", "#2ecc71")
+    # 
+    # # Create pie chart with custom colors
+    # accuracy_plot <- plot_ly(
+    #   data = error_better,
+    #   labels = ~Learner,
+    #   values = ~count,
+    #   type = 'pie',
+    #   textinfo = "label+percent",
+    #   hoverinfo = "text+value",
+    #   hole = 0.6,
+    #   marker = list(colors = colors, line = list(color = '#FFFFFF', width = 1))
+    # ) %>%
+    #   layout(
+    #     title = list(text="Best Performance",size=18),
+    #     showlegend = FALSE,
+    #     font = list(size = "4vmin", color = "#000000")
+    #   )
+    # 
+    # reactiveValues$plot2 <- accuracy_plot
+    # 
+    # ### THIRD FIGURE
+    # colors = c("#f39c12", "#9b59b6")
+    # 
+    # ll_pie <- LL_data %>%
+    #   dplyr::select(best.model) %>%
+    #   group_by(best.model) %>%
+    #   summarize(count = n())
+    # 
+    # # Create pie chart with custom colors
+    # learner_plot <- plot_ly(
+    #   data = ll_pie,
+    #   labels = ~best.model,
+    #   values = ~count,
+    #   type = 'pie',
+    #   rotation = 150,
+    #   textinfo = "label+percent",
+    #   hoverinfo = "text+value",
+    #   hole = 0.6,
+    #   marker = list(colors = colors, line = list(color = '#FFFFFF', width = 1))
+    # ) %>%
+    #   layout(
+    #     title = list(text="Type of Learner",size=18),
+    #     showlegend = FALSE,
+    #     font = list(size = "4vmin", color = "#000000")
+    #   )
+    # 
+    # reactiveValues$plot3 <- learner_plot
+    # 
+    # ## TABLE
+    # #Create datatable
+    # clean_ll <- LL_data %>%
+    #   dplyr::select(Participant, elab.LL, med.LL, diff.LL, best.model) %>%
+    #   rename('Elaborative Score' = 'elab.LL', 'Mediator Score' = 'med.LL',
+    #          'Score Difference' = 'diff.LL', 'Model' = 'best.model')
+    # 
+    # med_elab_formatter <-
+    #   formatter("span",
+    #             style = x ~ formattable::style(
+    #               font.weight = "bold",
+    #               color = ifelse(x == 'Mediator', "#9b59b6", ifelse(x == 'Elaborative', "#f39c12", "white")
+    #             )
+    #             ))
+    # 
+    # datatable_ll <- formattable(clean_ll,
+    #                             list(
+    #                               'Score Difference' = color_tile("#f7c46c", "#b984cc"),
+    #                               'Model' = med_elab_formatter
+    #                             )) %>%
+    #   as.datatable(options = list(
+    #     initComplete = JS(
+    #       "function(settings, json) {",
+    #       "$('body').css({'font-family': 'Calibri'});",
+    #       "}"
+    #     ),
+    #     paging = TRUE,    ## paginate the output
+    #     pageLength = 15,  ## number of rows to output for each page
+    #     scrollX = TRUE,   ## enable scrolling on X axis
+    #     scrollY = TRUE,   ## enable scrolling on Y axis
+    #     autoWidth = TRUE, ## use smart column width handling
+    #     server = FALSE,   ## use client-side processing
+    #     dom = 'Bfrtip',
+    #     buttons = c('csv', 'excel')),
+    #     extensions = 'Buttons',
+    #     selection = 'single', ## enable selection of a single row
+    #     filter = 'bottom',              ## include column filters at the bottom
+    #     rownames = FALSE                ## don't show row numbers/names
+    #   )
+    # 
+    # # title <- tags$caption(
+    # #   style = "caption-side: top; font-size: 18px; font-weight: bold; margin-bottom: 10px;",
+    # #   "My Formattable Datatable"
+    # # )
+    # 
+    # # # Combine the title and the datatable using htmltools::tagList
+    # # datatable_ll <- htmltools::tagList(title, datatable_ll)
+    # 
+    # reactiveValues$table <- datatable_ll
+    #   
+    # # After the analysis is done, hide the loading indicator
+    # shinyjs::toggle("loading_message", condition = FALSE)
+  })
+  
+  observeEvent(reactiveData$full_data, {
+    full_data <- reactiveData$full_data
+    
     cleandata_participant <- full_data %>% 
       group_by(participant, condition) %>% 
       summarize(
@@ -555,8 +734,6 @@ function(input, output, session) {
         n = n(),
         stError = sd_performance / sqrt(n)
       )
-    
-    print(class(cleandata_summary$mean_performance))
     
     # Update figures
     summary_plot <- plot_ly(data = cleandata_participant, x = ~condition, y = ~performance) %>%
@@ -599,13 +776,13 @@ function(input, output, session) {
       group_by(participant) %>%
       summarize(accuracy_diff = error - study) %>%
       mutate(Learner = case_when(accuracy_diff > 0 ~ 'Error Items', accuracy_diff <= 0 ~ 'Study Items'))
-
+    
     error_better <- learner_data %>%
       group_by(Learner) %>%
       summarize(count = n())
-
+    
     colors = c("#e74c3c", "#2ecc71")
-
+    
     # Create pie chart with custom colors
     accuracy_plot <- plot_ly(
       data = error_better,
@@ -622,17 +799,32 @@ function(input, output, session) {
         showlegend = FALSE,
         font = list(size = "4vmin", color = "#000000")
       )
-
+    
     reactiveValues$plot2 <- accuracy_plot
-
+    
+    # Save new plot to summary1.html and delete summary.html
+    htmlwidgets::saveWidget(reactiveValues$plot1, "www/updatingFigs/summary1.html", selfcontained = TRUE)
+    shinyjs::runjs("updateIframe1('updatingFigs/summary1.html')")
+    
+    print("Saved plot1")
+    
+    # Save new plot to accuracy1.html and delete accuracy.html
+    htmlwidgets::saveWidget(reactiveValues$plot2, "www/updatingFigs/accuracy1.html", selfcontained = TRUE)
+    shinyjs::runjs("updateIframe2('updatingFigs/accuracy1.html')")
+    print("Saved plot2")
+  })
+  
+  observeEvent(reactiveData$LL_data, {
+    LL_data <- reactiveData$LL_data
+    
     ### THIRD FIGURE
     colors = c("#f39c12", "#9b59b6")
-
+    
     ll_pie <- LL_data %>%
       dplyr::select(best.model) %>%
       group_by(best.model) %>%
       summarize(count = n())
-
+    
     # Create pie chart with custom colors
     learner_plot <- plot_ly(
       data = ll_pie,
@@ -650,7 +842,7 @@ function(input, output, session) {
         showlegend = FALSE,
         font = list(size = "4vmin", color = "#000000")
       )
-
+    
     reactiveValues$plot3 <- learner_plot
     
     ## TABLE
@@ -659,15 +851,15 @@ function(input, output, session) {
       dplyr::select(Participant, elab.LL, med.LL, diff.LL, best.model) %>%
       rename('Elaborative Score' = 'elab.LL', 'Mediator Score' = 'med.LL',
              'Score Difference' = 'diff.LL', 'Model' = 'best.model')
-
+    
     med_elab_formatter <-
       formatter("span",
                 style = x ~ formattable::style(
                   font.weight = "bold",
                   color = ifelse(x == 'Mediator', "#9b59b6", ifelse(x == 'Elaborative', "#f39c12", "white")
-                )
+                  )
                 ))
-
+    
     datatable_ll <- formattable(clean_ll,
                                 list(
                                   'Score Difference' = color_tile("#f7c46c", "#b984cc"),
@@ -692,17 +884,26 @@ function(input, output, session) {
         filter = 'bottom',              ## include column filters at the bottom
         rownames = FALSE                ## don't show row numbers/names
       )
-
+    
     # title <- tags$caption(
     #   style = "caption-side: top; font-size: 18px; font-weight: bold; margin-bottom: 10px;",
     #   "My Formattable Datatable"
     # )
-
+    
     # # Combine the title and the datatable using htmltools::tagList
     # datatable_ll <- htmltools::tagList(title, datatable_ll)
-
+    
     reactiveValues$table <- datatable_ll
-      
+    
+    
+    htmlwidgets::saveWidget(reactiveValues$plot3, "www/updatingFigs/learner1.html", selfcontained = TRUE)
+    shinyjs::runjs("updateIframe3('updatingFigs/learner1.html')")
+    print("Saved plot3")
+    
+    htmlwidgets::saveWidget(reactiveValues$table, "www/updatingFigs/dt1.html", selfcontained = TRUE)
+    shinyjs::runjs("updateIframe4('updatingFigs/dt1.html')")
+    print("Saved plot4")
+    
     # After the analysis is done, hide the loading indicator
     shinyjs::toggle("loading_message", condition = FALSE)
   })
