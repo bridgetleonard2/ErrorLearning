@@ -250,31 +250,46 @@ cleandata_summary_pred <- cleandata_agg_pred %>%
   group_by(condition, type) %>%
   summarise(Accuracy = mean(Accuracy))
 
+jitter <- position_jitter(width=0.1, seed=1)
+
+cleandata_agg_pred <- cleandata_agg_pred %>%
+  arrange(type, participant, condition)
+
 ggplot(cleandata_agg_pred, aes(x=condition, y=Accuracy, color=condition)) +
   facet_wrap(~ type) +
-  geom_line(color="grey", aes(group=participant), size=0.1) +
-  geom_point(position =   position_jitter(width=0.1), alpha=0.75, color="grey") +
+  geom_point(aes(group=participant), position = jitter, alpha=0.75, color="grey", size=2) +
+  geom_line(color="grey", aes(group=participant), position = jitter, size=0.01, alpha=0.5) +
   # scale_color_aaas() +
   scale_color_manual(values=c("#DC143C", "#008080")) +
   
   geom_text(data=cleandata_summary_pred, 
+            size=6.5,
             aes(x=condition, 
                 y=Accuracy, 
                 label=paste(round(Accuracy*100, 2), "%")),
-            hjust= c(-0.2)) +
+            hjust= c(-0.3)) +
   ggtitle("Mean Differences in Accuracy") +
   xlab("Condition") +
-  stat_summary(geom="point", fun.data = "mean_se", size=3) +
-  stat_summary(geom="errorbar", fun.data = "mean_se", width=0.1) +
+  stat_summary(geom="point", fun.data = "mean_se", size=3.5) +
+  stat_summary(geom="errorbar", fun.data = "mean_se", width=0.2) +
   labs(color = "Condition") +
   theme_minimal() +
-theme(legend.position = c(0, 1), 
-      legend.background = element_rect(fill="white",size=0.2, 
-                                       linetype="solid", colour ="lightgrey"),
-      text = element_text(size=15),
-      plot.title = element_text(hjust = 0.5))
+  theme(legend.position = c(0, 1),
+        legend.background = element_rect(fill="white",size=0.2,
+                                         linetype="solid", colour ="lightgrey"),
+        # text = element_text(size=18),
+        # plot.title = element_text(hjust = 0.5),
+        legend.text = element_text(size = 18),
+        legend.title = element_text(size = 22),
+        plot.title = element_text(size = 26, hjust = 0.5),
+        axis.title.x = element_text(size = 24),
+        axis.title.y = element_text(size = 24),
+        axis.text = element_text(size = 18),
+        strip.text = element_text(size = 18))
 
 ```
+
+
 ```{r}
 # Install and load necessary packages
 library(showtext)
@@ -458,17 +473,22 @@ cleandata_rt_summary_pred <- cleandata_rt_agg_pred %>%
   group_by(condition, type) %>%
   summarise(RT = mean(RT))
 
+jitter <- position_jitter(width=0.1, seed=1)
+
+cleandata_rt_agg_pred <- cleandata_rt_agg_pred %>%
+  arrange(type, participant, condition)
+  
 ggplot(cleandata_rt_agg_pred, aes(x=condition, y=RT, color=condition)) +
   facet_wrap(~ type) +
-  geom_line(color="grey", aes(group=participant), size=0.1) +
-  geom_point(position =   position_jitter(width=0.1), alpha=0.75, color="grey") +
+  geom_point(aes(group=participant), position = jitter, alpha=0.75, color="grey") +
+  geom_line(color="grey", aes(group=participant), position = jitter,  size=0.01, alpha=0.5) +
   # scale_color_aaas() +
   scale_color_manual(values=c("#DC143C", "#008080")) +
   
   geom_text(data=cleandata_rt_summary_pred, 
             aes(x=condition, 
                 y=RT, 
-                label=paste(round(RT), "ms")), size=4.5,
+                label=paste(round(RT), "ms")), size=6,
             hjust= c(-0.2)) +
   ggtitle("Mean Differences in Response Times") +
   xlab("Condition") +
@@ -476,11 +496,18 @@ ggplot(cleandata_rt_agg_pred, aes(x=condition, y=RT, color=condition)) +
   stat_summary(geom="errorbar", fun.data = "mean_se", width=0.1) +
   labs(color = "Condition") +
   theme_minimal() +
-theme(legend.position = c(0, 1), 
-      legend.background = element_rect(fill="white",size=0.2, 
-                                       linetype="solid", colour ="lightgrey"),
-      text = element_text(size=15),
-      plot.title = element_text(hjust = 0.5))
+  theme(legend.position = c(0, 1),
+        legend.background = element_rect(fill="white",size=0.2,
+                                         linetype="solid", colour ="lightgrey"),
+        # text = element_text(size=18),
+        # plot.title = element_text(hjust = 0.5),
+        legend.text = element_text(size = 18),
+        legend.title = element_text(size = 22),
+        plot.title = element_text(size = 26, hjust = 0.5),
+        axis.title.x = element_text(size = 24),
+        axis.title.y = element_text(size = 24),
+        axis.text = element_text(size = 18),
+        strip.text = element_text(size = 18))
 ```
 
 ### Individual differences
